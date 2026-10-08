@@ -196,6 +196,248 @@ Não registre cookies, trace IDs sensíveis, proposal IDs reais ou payloads pess
 
 ---
 
+# 6.1. Criar discovery persistente por service
+
+Além da documentação orientada a indicadores e dashboards, crie uma base de discovery técnico reutilizável por service.
+
+Objetivo:
+
+Registrar informações observadas no Datadog real que possam ser reutilizadas em investigações futuras, troubleshooting, criação de dashboards e, futuramente, criação de monitors.
+
+Crie a estrutura:
+
+`darwin-monitor/discovery/`
+
+e dentro dela:
+
+`darwin-monitor/discovery/README.md`
+
+`darwin-monitor/discovery/services/`
+
+Crie **um arquivo Markdown por service relevante confirmado no Datadog**.
+
+Exemplo de nomenclatura:
+
+`darwin-monitor/discovery/services/<service-name>.md`
+
+Para os services de conta/cartão e pagamentos, use os nomes reais observados no Datadog.
+
+## O README do discovery
+
+O arquivo:
+
+`darwin-monitor/discovery/README.md`
+
+deve funcionar como índice técnico e conter:
+
+- lista de services documentados;
+- papel funcional de cada service;
+- principais fluxos associados;
+- quais indicadores dependem de cada service;
+- links para os documentos individuais;
+- data/etapa da última revalidação;
+- legenda dos status:
+  - CONFIRMADO NO DATADOG
+  - CONFIRMADO NO CÓDIGO
+  - NÃO LOCALIZADO NO DATADOG
+  - HIPÓTESE
+  - PENDENTE DE VALIDAÇÃO
+
+## Documento individual por service
+
+Cada arquivo de service deve ser um guia técnico reutilizável e não apenas uma cópia do relatório de dashboard.
+
+Estruture cada documento com, no mínimo:
+
+### 1. Identificação
+
+- nome exato do service no Datadog;
+- aplicação/repositório correspondente;
+- responsabilidade funcional;
+- ambientes observados;
+- status da validação.
+
+### 2. Operations observadas
+
+Tabela:
+
+| operation_name | Fonte | Papel técnico | Fluxos relacionados | Status |
+|----------------|-------|---------------|----------------------|--------|
+
+Registrar somente operations realmente observadas no Datadog ou comprovadas no código, deixando clara a origem.
+
+### 3. Resources observados
+
+Tabela:
+
+| resource_name | operation_name | Método/tipo | Papel no fluxo | Indicadores relacionados | Status |
+|---------------|----------------|-------------|----------------|--------------------------|--------|
+
+Incluir endpoints, consumers, listeners, exchanges, jobs e outros resources relevantes.
+
+### 4. Attributes / tags úteis
+
+Tabela:
+
+| Atributo/tag | Onde aparece | Exemplo mascarado/sem valor real | Uso possível | Pesquisável? | Group by? | Cardinality? | Status |
+|--------------|--------------|----------------------------------|--------------|-------------|-----------|--------------|--------|
+
+Priorize informações úteis para:
+
+- investigação de traces;
+- correlação;
+- filtros;
+- agrupamentos;
+- count unique/cardinality;
+- troubleshooting;
+- dashboards;
+- monitors futuros.
+
+Não registrar valores reais de negócio.
+
+### 5. Identificadores de correlação
+
+Documentar IDs encontrados, como:
+
+- proposta;
+- recorrência;
+- schedule;
+- request;
+- correlation;
+- transaction;
+- outros IDs reais do serviço.
+
+Para cada um, registrar:
+
+- nome exato;
+- origem;
+- onde aparece;
+- se atravessa outros services;
+- se é estável;
+- se é pesquisável;
+- se permite correlação;
+- se pode ser usado em count unique;
+- limitações.
+
+### 6. Fontes disponíveis no Datadog
+
+Registrar por service:
+
+- APM Metrics;
+- APM Spans;
+- Traces;
+- Logs;
+- métricas customizadas, se existirem.
+
+Para cada fonte, informar:
+
+- disponível ou não;
+- principais filtros;
+- limitações;
+- melhor uso.
+
+### 7. Queries e filtros úteis já validados
+
+Registrar consultas de leitura que tenham sido testadas no Datadog real e sejam úteis para investigação futura.
+
+Para cada uma:
+
+- finalidade;
+- data source;
+- filtro/query;
+- service;
+- operation;
+- resource;
+- tags;
+- janela utilizada no teste;
+- resultado qualitativo:
+  - retornou dados;
+  - retornou zero;
+  - não disponível.
+
+Não registrar números sensíveis de produção.
+
+### 8. Relações com outros services
+
+Documentar:
+
+- services que participam do mesmo trace;
+- origem/destino quando comprovável;
+- integrações observadas;
+- identificadores usados na correlação;
+- pontos de transição entre aplicações.
+
+Não inferir direção apenas pela ordem visual do trace sem evidência.
+
+### 9. Sinais de sucesso e falha
+
+Separar:
+
+- sucesso técnico;
+- falha técnica;
+- sucesso funcional;
+- falha funcional.
+
+Registrar quais sinais existem no Datadog e quais existem apenas no código.
+
+### 10. Riscos de contagem
+
+Registrar:
+
+- retries;
+- redelivery;
+- múltiplos spans;
+- chamadas internas;
+- duplicidade;
+- limites de usar request count/span count;
+- possibilidade ou impossibilidade de cardinality.
+
+### 11. Indicadores suportados pelo service
+
+Tabela:
+
+| Indicador | Sinal/Fonte | Confiabilidade | Gap |
+|-----------|-------------|---------------|-----|
+
+Isso deve facilitar futuras montagens de dashboards e monitors.
+
+### 12. Gaps de observabilidade do service
+
+Registrar de forma objetiva:
+
+- atributos ausentes;
+- tags ausentes;
+- logs não enviados;
+- métricas ausentes;
+- IDs não propagados;
+- sinais funcionais não observáveis;
+- qualquer limitação encontrada.
+
+### 13. Evidências
+
+Sempre que possível:
+
+**Datadog**
+
+`service -> operation -> resource -> attribute/tag -> comportamento observado`
+
+**Código**
+
+`arquivo -> classe -> método -> papel no fluxo`
+
+## Regra de manutenção
+
+Sempre que esta tarefa descobrir ou corrigir informações sobre um service, atualize o documento desse service.
+
+A ideia é que `darwin-monitor/discovery/services/` se torne uma base técnica permanente para futuras investigações, dashboards e monitors, evitando repetir o discovery do zero.
+
+Não limite esses documentos apenas ao indicador atualmente analisado: registre também informações úteis encontradas durante a investigação, desde que tenham evidência e pertençam ao mesmo service.
+
+Não transforme hipótese em fato.
+
+
+---
+
 # 7. Tirar a prova dos gaps de IDs
 
 Um ponto crítico anterior foi a possível existência de identificadores de proposta/recorrência no código, mas não necessariamente como atributos pesquisáveis no Datadog.
@@ -531,6 +773,10 @@ Além disso, crie:
 
 `darwin-monitor/dashboards/05-evidencias-datadog.md`
 
+`darwin-monitor/discovery/README.md`
+
+`darwin-monitor/discovery/services/<service-name>.md` para cada service relevante confirmado no Datadog.
+
 Este último arquivo deve registrar, sem dados sensíveis:
 
 - data source consultada;
@@ -590,7 +836,8 @@ A tarefa só pode ser considerada concluída se:
 - houver evidência de consultas reais ao APM/Spans/Metrics/Logs;
 - pelo menos os fluxos de recorrência de cartão e débito tiverem sido confrontados com o Datadog;
 - as recomendações de widgets distinguirem o que foi testado do que ainda é hipótese;
-- a documentação anterior tiver sido revalidada, e não simplesmente repetida.
+- a documentação anterior tiver sido revalidada, e não simplesmente repetida;
+- o discovery técnico dos services investigados tiver sido registrado/atualizado em `darwin-monitor/discovery/services/`.
 
 Se qualquer um desses itens falhar, não declare a tarefa concluída.
 

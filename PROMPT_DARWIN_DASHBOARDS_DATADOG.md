@@ -1,33 +1,127 @@
-# Prompt — Revalidar Darwin Monitor no Datadog e atualizar documentação de dashboards
+# Prompt — Darwin Monitor: validação OBRIGATÓRIA no Datadog real + documentação de dashboards
 
-Atue como um engenheiro de software sênior especializado em Java/Spring Boot, observabilidade, Datadog APM, distributed tracing, métricas, logs e análise de fluxos de negócio.
+Atue como engenheiro de software sênior especializado em Java/Spring Boot, observabilidade, Datadog APM, distributed tracing, métricas, logs e análise de fluxos de negócio.
 
-O objetivo desta etapa é **revalidar o discovery do Darwin Monitor usando dados reais do Datadog** e atualizar a documentação de dashboards para que ela represente o que é de fato possível montar hoje com a telemetria existente.
+## REGRA PRINCIPAL DESTA TAREFA
 
-## Restrições desta etapa
+**NÃO produza a documentação final de dashboards apenas a partir das documentações existentes ou do código.**
 
-- NÃO criar, alterar ou excluir dashboards no Datadog.
-- NÃO criar, alterar ou excluir monitors.
-- NÃO criar alertas ou notificações.
-- NÃO alterar código das aplicações.
-- NÃO alterar instrumentação nesta etapa.
-- NÃO alterar configurações do Datadog.
-- Operar no Datadog apenas em modo de leitura/análise.
-- NÃO imprimir, registrar, documentar ou expor cookies, tokens, headers de autenticação ou qualquer credencial.
-- Se a autenticação falhar, documentar o bloqueio e continuar com análise estática; não inventar resultados.
-- Todo resultado técnico desta etapa deve ser registrado dentro de `darwin-monitor/`.
+Esta tarefa só é considerada executada corretamente se você:
 
-A etapa atual é exclusivamente de **dashboard + validação da telemetria disponível**.
+1. ler o runbook do servidor de cookies/autenticação;
+2. usar a sessão/cookies atuais para acessar o **Datadog real** em modo somente leitura;
+3. executar consultas reais no Datadog para confirmar services, operations, resources, spans, tags/atributos, métricas e disponibilidade de logs;
+4. confrontar essas evidências reais com o código e com a documentação já existente em `darwin-monitor/`;
+5. somente depois atualizar a documentação de dashboards.
+
+As documentações existentes são **hipóteses e contexto**, não fonte de verdade suficiente para esta etapa.
+
+A fonte de verdade desta etapa deve ser a combinação:
+
+**DATADOG REAL + CÓDIGO + DOCS EXISTENTES**
+
+Se você não conseguir acessar o Datadog real, **PARE a tarefa** e informe o bloqueio.  
+Não continue produzindo uma nova versão baseada somente em análise estática.
 
 ---
 
-# 1. Ler primeiro todo o contexto existente
+# 1. Escopo e restrições
 
-Antes de consultar o Datadog, localize e leia a documentação já produzida em:
+Esta etapa é exclusivamente de **análise e documentação de dashboards**.
+
+NÃO:
+
+- crie, altere ou exclua dashboards no Datadog;
+- crie monitors;
+- crie alertas;
+- configure Teams;
+- altere código;
+- altere telemetria;
+- altere instrumentação;
+- altere configurações do Datadog;
+- exponha cookies, tokens, headers de autenticação ou credenciais.
+
+O acesso ao Datadog deve ser somente leitura.
+
+Todo resultado deve ser gravado dentro de:
 
 `darwin-monitor/`
 
-Leia principalmente, quando existirem:
+---
+
+# 2. ETAPA ZERO OBRIGATÓRIA — preparar acesso ao Datadog real
+
+Antes de analisar indicadores ou editar documentação, localize o projeto atual de sincronização de cookies/autenticação, preferencialmente em estrutura semelhante a:
+
+`%USERPROFILE%\Tools\cookie-sync\gemini-auth-sync\`
+
+Leia obrigatoriamente:
+
+- `GEMINI_PLATFORM_ACCESS_RUNBOOK.md`
+- `README.md`
+- demais documentos operacionais relevantes;
+- o código do servidor somente quando necessário para compreender o procedimento documentado.
+
+Siga o runbook para:
+
+1. localizar a credencial atual do Datadog;
+2. validar `metadata.json` e freshness;
+3. iniciar o servidor local, se necessário;
+4. validar a sessão autenticada no Datadog com uma chamada somente leitura;
+5. confirmar que a sessão realmente permite consultar APM/Traces/Spans/Metrics/Logs.
+
+Nunca imprima os valores das credenciais.
+
+## GATE obrigatório
+
+Antes de prosseguir, você deve conseguir registrar:
+
+`DATADOG_REAL_ACCESS=CONFIRMADO`
+
+Isso deve significar que pelo menos uma consulta real autenticada ao Datadog retornou dados do ambiente do usuário.
+
+Se não conseguir:
+
+- não reescreva os documentos de dashboard;
+- não repita conclusões antigas;
+- não produza queries especulativas;
+- pare e informe exatamente o bloqueio técnico encontrado.
+
+---
+
+# 3. Prova mínima obrigatória de acesso real
+
+Antes de usar qualquer conclusão anterior, faça consultas reais no Datadog e confirme pelo menos:
+
+1. existência do service de gestão de eventos conta/cartão;
+2. existência do service de gestão de eventos pagamentos;
+3. pelo menos um resource real de recorrência no APM/Spans;
+4. operations associadas a esse resource;
+5. se APM Metrics possui dados para esse fluxo;
+6. se APM Spans possui dados para esse fluxo;
+7. se Log Explorer possui ou não logs dessas aplicações;
+8. pelo menos algumas tags/atributos reais observáveis em um span do fluxo.
+
+Você já possui como candidatos de investigação, mas deve confirmar no Datadog, não assumir:
+
+- `POST /v1/recorrencias`
+- `POST /solicitacao-recorrencia`
+- `POST /v1/schedule-management/schedule`
+- resources/consumers do Evento 31;
+- consumers/listeners de retorno SGAT/SPAG;
+- operations como `spring.handle`, `http.client.request`, `servlet.request`, `camel.exchange`.
+
+Se algum candidato não existir no Datadog, marque como refutado ou não localizado.
+
+---
+
+# 4. Somente depois, ler e confrontar a documentação Darwin
+
+Após confirmar acesso ao Datadog real, leia:
+
+`darwin-monitor/`
+
+Incluindo, quando existirem:
 
 - `README.md`
 - `01-arquitetura-e-fontes.md`
@@ -36,40 +130,34 @@ Leia principalmente, quando existirem:
 - `fontes/`
 - `dashboards/`
 
-Dê atenção especial aos documentos relacionados a:
+A documentação anterior deve ser tratada como:
 
-- Índice de Sucesso de Recorrência
-- Taxa de Falha
-- Processamento de Seguros / MOB
-- Taxa de Reprocessamento
-- Cobrança de Seguros Cancelados
-- Taxa de Falha no Cancelamento
-- Cobranças em Duplicidade
-- Parcela Cobrada x Parcela Lançada
-- Data de Vencimento x Data de Postagem
-- Ausência de Evento de Pagamento
-- Conciliação Financeira
-- Estornos Indevidos
+- descoberta anterior;
+- hipótese;
+- evidência de código;
+- possível direção de investigação.
 
-Não trate a documentação anterior como verdade absoluta.
+Para cada afirmação relevante, classifique-a após consultar o Datadog:
 
-Ela é a base de hipóteses que agora deve ser confrontada com:
+- CONFIRMADO NO DATADOG
+- CONFIRMADO NO CÓDIGO, MAS NÃO NO DATADOG
+- REFUTADO PELO DATADOG
+- AINDA NÃO COMPROVADO
 
-1. código das aplicações;
-2. telemetria real disponível no Datadog.
+Não copie conclusões antigas sem essa revalidação.
 
 ---
 
-# 2. Ler as aplicações envolvidas
+# 5. Ler o código das duas aplicações
 
-Identifique e leia as duas aplicações responsáveis pelos fluxos já levantados:
+Localize no workspace as aplicações de:
 
-- gestão de eventos de conta/cartão;
-- gestão de eventos de pagamentos.
+- gestão de eventos conta/cartão;
+- gestão de eventos pagamentos.
 
-Localize os projetos reais no workspace pelo nome e pela documentação existente.
+Use o código para explicar e complementar o que foi observado no Datadog.
 
-Use o código apenas para confirmar:
+Confirme:
 
 - endpoints;
 - consumers;
@@ -77,151 +165,44 @@ Use o código apenas para confirmar:
 - listeners;
 - schedulers;
 - integrações;
-- services;
 - métodos;
 - status funcionais;
 - IDs;
 - mensagens de log;
-- recursos HTTP;
 - propagação de identificadores;
-- comportamento de retry;
-- eventos de sucesso/falha.
+- retries/redelivery;
+- sinais de sucesso e falha.
 
-Não faça alterações.
-
-Reconstrua somente os fluxos necessários para validar os indicadores.
+O código não substitui a validação no Datadog.
 
 ---
 
-# 3. Ler o guia do servidor de cookies/autenticação
+# 6. Inventário REAL de telemetria
 
-Localize a instalação atual do projeto de sincronização, preferencialmente em estrutura semelhante a:
+Para cada uma das duas aplicações, produza um inventário baseado em observação real:
 
-`%USERPROFILE%\Tools\cookie-sync\gemini-auth-sync\`
+| Item | Valor observado no Datadog | Evidência/consulta | Status |
+|------|-----------------------------|-------------------|--------|
+| Service | ... | ... | CONFIRMADO |
+| Environment | ... | ... | CONFIRMADO |
+| Operation | ... | ... | CONFIRMADO |
+| Resource | ... | ... | CONFIRMADO |
+| Span tags | ... | ... | CONFIRMADO |
+| APM Metrics | ... | ... | DISPONÍVEL/INDISPONÍVEL |
+| APM Spans | ... | ... | DISPONÍVEL/INDISPONÍVEL |
+| Logs | ... | ... | DISPONÍVEL/INDISPONÍVEL |
 
-Leia antes de usar qualquer credencial:
-
-- `GEMINI_PLATFORM_ACCESS_RUNBOOK.md`
-- `README.md`
-- demais documentos operacionais relevantes do servidor.
-
-Se o caminho atual estiver diferente, localize o diretório real e siga a documentação existente.
-
-O código/documentação atual do servidor é a fonte de verdade para:
-
-- como localizar a credencial do Datadog;
-- como validar freshness;
-- como iniciar o servidor quando necessário;
-- como validar a sessão;
-- como detectar expiração;
-- como tratar 401/403;
-- como usar os cookies sem expô-los.
-
-Nunca exiba valores reais de credenciais.
+Não registre cookies, trace IDs sensíveis, proposal IDs reais ou payloads pessoais.
 
 ---
 
-# 4. Tentar validar acesso ao Datadog
+# 7. Tirar a prova dos gaps de IDs
 
-Usando somente o procedimento documentado no runbook:
+Um ponto crítico anterior foi a possível existência de identificadores de proposta/recorrência no código, mas não necessariamente como atributos pesquisáveis no Datadog.
 
-1. verifique se existe credencial válida para Datadog;
-2. valide freshness;
-3. valide a sessão com uma chamada somente leitura;
-4. confirme se é possível consultar o Datadog autenticado.
+Agora comprove isso no Datadog real.
 
-Se houver necessidade de sincronização manual/automática, siga apenas o mecanismo já implementado/documentado.
-
-Não tente contornar controles de acesso.
-
-Não altere nada no Datadog.
-
-Registre no relatório apenas:
-
-- acesso confirmado;
-- acesso não confirmado;
-- sessão expirada;
-- bloqueio técnico.
-
-Nunca registre o cookie/token.
-
----
-
-# 5. Revalidar as fontes reais disponíveis no Datadog
-
-Existe uma hipótese anterior de que:
-
-- os services das aplicações aparecem no APM;
-- APM Traces/Spans possuem dados;
-- APM Metrics possui alguns dados derivados;
-- o Log Explorer pode não estar recebendo logs dessas aplicações.
-
-NÃO assuma que isso continua correto.
-
-Valide no Datadog.
-
-Para cada aplicação, confirme:
-
-- service real;
-- environments disponíveis;
-- operações;
-- resources;
-- endpoints;
-- spans;
-- tags/atributos;
-- APM Metrics disponíveis;
-- traces disponíveis;
-- logs disponíveis ou ausentes;
-- período de retenção/consulta relevante, quando visível.
-
-Classifique cada fonte:
-
-- CONFIRMADO NO DATADOG
-- CONFIRMADO NO CÓDIGO, NÃO LOCALIZADO NO DATADOG
-- HIPÓTESE
-- INDISPONÍVEL
-
----
-
-# 6. Revalidar resources e operações já descobertos
-
-Procure especificamente os recursos já levantados, quando aplicáveis.
-
-Exemplos a validar, não assumir:
-
-## Conta/cartão
-
-- `POST /v1/recorrencias`
-- `POST /solicitacao-recorrencia`
-- resources/consumers relacionados ao Evento 31
-- operações `spring.handle`, `http.client.request`, `servlet.request`, `camel.exchange` ou equivalentes realmente observados.
-
-## Pagamentos/débito
-
-- `POST /v1/schedule-management/schedule`
-- consumers/listeners de retorno SGAT/SPAG
-- resources de processamento/agendamento.
-
-Para cada resource realmente encontrado, registre:
-
-- service;
-- operation;
-- resource_name;
-- method;
-- status code quando relevante;
-- tags úteis;
-- relação com o fluxo de negócio;
-- se é entrada, processamento intermediário, saída ou sucesso técnico.
-
----
-
-# 7. Tirar a prova dos gaps já identificados
-
-Um dos principais gaps anteriores foi o identificador de proposta, como `cdPropostaSeguro`, que poderia aparecer no código/log, mas não estava confirmado como atributo pesquisável no Datadog.
-
-Agora, com acesso ao Datadog, tente confirmar de fato.
-
-Procure por atributos/tags equivalentes a:
+Procure, inclusive com variações já vistas anteriormente:
 
 - `cdPropostaSeguro`
 - `proposta`
@@ -236,488 +217,398 @@ Procure por atributos/tags equivalentes a:
 - `uidRecurrence`
 - `correlationId`
 - `requestId`
-- outros IDs reais encontrados no código.
+- outros IDs encontrados no código.
 
-Para cada identificador responda:
+Para cada ID, informe com base em observação real:
 
-- existe no código?
 - aparece no Datadog?
-- aparece em span?
-- aparece em trace?
-- aparece em log?
-- é tag/facet pesquisável?
-- o valor é estável ao longo do fluxo?
+- em que fonte: span, trace, log ou metric tag?
+- qual nome exato possui?
+- é pesquisável?
+- pode ser usado em filtro?
 - pode ser usado em group by?
-- pode ser usado em cardinality/count unique?
-- permite correlacionar entrada e resultado?
+- pode ser usado para cardinality/count unique?
+- aparece nos dois lados do fluxo?
+- ajuda a evitar dupla contagem?
 
-Se o valor existir somente no payload/mensagem, mas não como atributo estruturado, documente isso como gap de instrumentação.
+Se existir no código mas não no Datadog, classifique como gap de instrumentação.
 
 ---
 
-# 8. Revalidar o Índice de Sucesso de Recorrência
+# 8. Revalidar o Índice de Sucesso de Recorrência com dados reais
 
 Este é o indicador prioritário.
 
-Reavalie com dados reais do Datadog:
-
 ## Cartão
 
-Descubra qual sinal existente representa melhor:
+Tente identificar no Datadog real sinais para:
 
-1. recorrência iniciada;
-2. recorrência enviada;
-3. recorrência processada;
-4. sucesso funcional;
-5. falha funcional;
-6. falha técnica.
+1. entrada/início;
+2. envio;
+3. processamento;
+4. sucesso técnico;
+5. sucesso funcional;
+6. falha técnica;
+7. falha funcional.
 
 ## Débito
 
-Faça a mesma análise:
+Faça o mesmo para:
 
 1. início/agendamento;
-2. envio ao sistema externo;
+2. envio;
 3. processamento;
-4. sucesso funcional;
-5. falha funcional;
+4. sucesso técnico;
+5. sucesso funcional;
 6. falha técnica;
-7. esgotamento de retries, se observável.
+7. falha funcional;
+8. esgotamento de retries, se observável.
 
-Não transforme HTTP 2xx automaticamente em sucesso de negócio.
+Não considere automaticamente HTTP 2xx como sucesso funcional.
 
-Diferencie:
+Para cada sinal, registre:
 
-- sucesso técnico da chamada;
-- sucesso funcional da recorrência.
-
-Verifique se o Datadog contém sinal suficiente para essa distinção.
-
----
-
-# 9. Reavaliar se o dashboard deve usar Logs, APM Spans ou APM Metrics
-
-Para cada indicador, escolha a fonte mais adequada baseada no que realmente estiver disponível.
-
-Considere:
-
-## APM Metrics
-
-Usar quando houver métricas confiáveis como:
-
-- requests/hits;
-- errors;
-- error rate;
-- latency;
-
-filtradas corretamente por:
-
+- source;
 - service;
 - operation;
 - resource;
-- tags.
+- tags/atributos;
+- agregação possível;
+- risco de duplicidade;
+- confiança.
 
-Não tratar requests técnicos automaticamente como recorrências de negócio.
+---
+
+# 9. Decidir a fonte do dashboard com base no Datadog real
+
+Não escolha Logs, APM Metrics ou APM Spans por preferência teórica.
+
+Escolha pelo que realmente estiver disponível.
+
+## APM Metrics
+
+Use somente quando os dados reais permitirem uma métrica defensável.
+
+Exemplos possíveis:
+
+- Requests
+- Errors
+- Error Rate
+- Latency
+
+Filtrando por service/operation/resource reais.
+
+Não chame requests técnicos de "propostas" se isso não estiver comprovado.
 
 ## APM Spans
 
-Usar quando for necessário:
+Use quando precisar:
 
-- filtrar resource específico;
-- usar tags/atributos do span;
-- separar operações;
-- pesquisar IDs;
-- fazer agregações ou cardinalidade suportadas pela interface.
+- resource específico;
+- tags/atributos do span;
+- cardinalidade;
+- filtros funcionais/técnicos;
+- investigar IDs.
 
 ## Logs
 
-Usar apenas se os logs estiverem de fato disponíveis/indexados no Datadog.
+Use somente se o Log Explorer realmente retornar dados das aplicações.
 
-Se Log Explorer não possuir os logs dessas aplicações, remover das recomendações qualquer query que dependa de logs como se fosse executável hoje.
+Se o Log Explorer estiver vazio para esses services, registre isso como descoberta real e remova queries de log da versão executável do dashboard.
 
 ## Métricas customizadas
 
-Se não existirem hoje, não inventar.
+Somente documente como existentes se forem observadas de fato.
 
-Podem ser documentadas como evolução futura.
-
----
-
-# 10. Construir uma matriz Indicador x Fonte real
-
-Atualize a documentação com uma tabela semelhante a:
-
-| Indicador | Fonte atual | Service | Operation | Resource | Tags/IDs | Query possível hoje | Confiabilidade | Gap |
-|-----------|-------------|---------|-----------|----------|----------|---------------------|---------------|-----|
-
-Classifique a confiabilidade:
-
-- ALTA
-- MÉDIA
-- BAIXA
-- NÃO IMPLEMENTÁVEL COM CONFIANÇA HOJE
-
-Explique o motivo.
+Caso contrário, ficam como recomendação futura.
 
 ---
 
-# 11. Priorizar um dashboard MVP que possa ser apresentado agora
+# 10. Queries reais, não especulativas
 
-Existe necessidade de apresentar progresso da atividade.
+Toda query ou configuração recomendada como "PRONTO PARA MONTAR" deve ter sido testada contra o Datadog real nesta execução.
 
-Portanto, para cada conjunto de indicadores, separe:
+Para cada widget registre:
 
-## MVP IMPLEMENTÁVEL AGORA
+- consulta/configuração testada;
+- se retornou dados;
+- período usado no teste;
+- source;
+- service;
+- operation;
+- resource;
+- filtros;
+- group by;
+- agregação;
+- resultado qualitativo observado.
 
-Widgets que podem ser montados com a telemetria atual, mesmo que representem uma visão técnica/operacional preliminar.
+Não é necessário documentar números de produção exatos.
 
-Os nomes dos widgets devem ser honestos.
+Pode registrar:
 
-Exemplo:
+- retornou dados;
+- retornou zero;
+- não disponível;
+- campo não pesquisável;
+- facet ausente.
 
-Se a fonte é `requests` do resource `POST /v1/recorrencias`, não chamar automaticamente de "Propostas únicas processadas".
+Uma query não testada deve ser classificada como:
 
-Prefira um nome como:
+`HIPÓTESE — NÃO VALIDADA NO DATADOG`
 
-- Chamadas de Recorrência
-- Requests de Recorrência
-- Volume técnico do endpoint de Recorrência
+e não pode entrar na lista de widgets prontos.
 
-até existir evidência suficiente para um nome funcional.
+---
 
-## VERSÃO ALVO
+# 11. Dashboard MVP para demonstrar progresso
 
-Widgets que fariam sentido após:
+Existe necessidade de apresentar algo funcional agora.
 
-- instrumentação de ID de proposta;
-- span tags adicionais;
-- log estruturado;
+Construa uma proposta de MVP baseada somente no que o Datadog real permite hoje.
+
+Separe claramente:
+
+## PRONTO PARA MONTAR AGORA
+
+Widgets sustentados por query/configuração testada no Datadog.
+
+## MVP PRELIMINAR
+
+Widgets tecnicamente úteis, mas que medem volume técnico e não necessariamente o indicador funcional definitivo.
+
+## BLOQUEADO POR GAP
+
+Widgets que exigem:
+
+- tag adicional;
+- ID de proposta;
 - métrica customizada;
-- correlação entre sistemas;
-- outra melhoria necessária.
+- log estruturado;
+- correlação;
+- instrumentação.
 
-O objetivo é permitir apresentar:
+Se, por exemplo, hoje o Datadog permite contar Requests de `POST /v1/recorrencias`, o nome do widget deve ser algo como:
 
-1. o que já está pronto/viável;
-2. o que ainda precisa ser evoluído;
-3. por que a evolução é necessária.
+`Chamadas de Recorrência`
 
----
+e NÃO:
 
-# 12. Propor dashboards que façam sentido para a história Darwin
+`Propostas Processadas`
 
-Com base nos indicadores esperados na atividade, reavalie quais dashboards são realmente úteis.
-
-Não crie um widget por obrigação.
-
-Agrupe por contexto funcional quando fizer sentido.
-
-Exemplo conceitual, somente se validado:
-
-## Dashboard 1 — Recorrência
-
-- volume de entrada;
-- volume de processamento;
-- sucessos;
-- falhas;
-- taxa de sucesso;
-- evolução temporal;
-- cartão x débito.
-
-## Dashboard 2 — Cancelamento
-
-- solicitações de cancelamento;
-- cancelamentos processados;
-- falhas;
-- recorrências ainda ativas após cancelamento;
-- cobranças após cancelamento.
-
-## Dashboard 3 — Postagem/Cobrança
-
-- postagens;
-- duplicidades;
-- parcela cobrada x lançada;
-- divergências;
-- data esperada x data de postagem.
-
-## Dashboard 4 — Pagamento/Conciliação
-
-- eventos de pagamento;
-- ausência de evento;
-- conciliação;
-- estornos indevidos.
-
-Essa estrutura é apenas uma hipótese.
-
-A documentação final deve refletir o que o código e o Datadog sustentam.
+a menos que essa equivalência tenha sido comprovada.
 
 ---
 
-# 13. Para cada widget, documentar exatamente como montar no Datadog
+# 12. Reavaliar os dashboards da história Darwin
 
-Para todo widget recomendado como MVP, informe:
+Com base em DATADOG REAL + código + documentação, determine quais agrupamentos fazem sentido.
 
-- Dashboard/seção
-- Nome do widget
-- Objetivo
-- Tipo de widget:
-  - Query Value
-  - Timeseries
-  - Table
-  - Top List
-  - outro, se necessário
-- Data source:
-  - APM Metrics
-  - APM Spans
-  - Logs
-  - Metrics
-- Request:
-  - Requests
-  - Errors
-  - Error Rate
-  - Latency
-  - outro realmente disponível
-- Service
-- Environment, se necessário
-- Operation
-- Resource
-- Filter by tags
-- Group by
-- Aggregation
-- Formula
-- Unidade
-- Janela temporal recomendada
-- Query/filtro exato quando aplicável
-- Evidência no Datadog
-- Evidência no código
-- Limitação
-- Status:
-  - PRONTO PARA MONTAR
-  - MVP PRELIMINAR
-  - DEPENDE DE GAP
-  - NÃO RECOMENDADO
+Indicadores esperados incluem:
 
-Escreva de maneira que um desenvolvedor consiga abrir o Datadog e reproduzir o widget seguindo o documento.
+## Recorrência
+
+- Índice de Sucesso
+- Taxa de Falha
+- Processamento de Seguros / MOB
+- Taxa de Reprocessamento
+
+## Cancelamento
+
+- Cobrança de Seguros Cancelados
+- Taxa de Falha no Cancelamento
+
+## Postagem/Cobrança
+
+- Cobranças em Duplicidade
+- Parcela Cobrada x Parcela Lançada
+- Data de Vencimento x Data de Postagem
+
+## Pagamento/Conciliação
+
+- Ausência de Evento de Pagamento
+- Conciliação Financeira
+- Estornos Indevidos
+
+Não force um widget quando a telemetria não sustentar o indicador.
 
 ---
 
-# 14. Query Value e Timeseries
+# 13. Documentar exatamente como montar cada widget
 
-Quando fizer sentido, forneça instruções concretas de interface.
+Para cada widget recomendado informe:
 
-Exemplo conceitual:
+- dashboard/seção;
+- nome;
+- objetivo;
+- tipo de widget;
+- data source;
+- Request, se APM Metrics;
+- service;
+- environment;
+- operation;
+- resource;
+- filter by tags;
+- group by;
+- aggregation;
+- formula;
+- unidade;
+- janela temporal;
+- configuração/query exata;
+- resultado da validação no Datadog real;
+- evidência no código;
+- limitação;
+- status.
 
-Data source:
-APM Metrics
+Status permitidos:
 
-Request:
-Requests
-
-Service:
-<service real>
-
-Operation:
-<operation real>
-
-Resource:
-<resource real>
-
-Filter by:
-<tag real>
-
-Group by:
-<campo real>
-
-Não use placeholders no documento final quando o valor tiver sido confirmado no Datadog.
-
-Se não tiver sido confirmado, marque explicitamente:
-
-`VALIDAR NO DATADOG`
+- PRONTO PARA MONTAR — TESTADO NO DATADOG
+- MVP PRELIMINAR — TESTADO NO DATADOG
+- DEPENDE DE GAP
+- HIPÓTESE — NÃO VALIDADA
+- NÃO RECOMENDADO
 
 ---
 
-# 15. Índice de Sucesso: distinguir versão preliminar da versão definitiva
+# 14. Índice de Sucesso: preliminar x definitivo
 
-Se hoje for possível apenas medir:
-
-- quantidade de requests;
-- spans;
-- erros técnicos;
-
-documente um indicador preliminar com nome tecnicamente correto.
-
-Não apresente isso como "Índice de Sucesso de Recorrência" definitivo se não houver como identificar sucesso de negócio.
-
-Para o índice definitivo, tente chegar a algo equivalente a:
+O índice definitivo deve, idealmente, representar:
 
 `sucessos funcionais únicos / recorrências únicas iniciadas * 100`
 
-Mas somente recomende essa fórmula como executável se houver:
+Só classifique isso como implementável agora se tiver comprovado no Datadog:
 
-- unidade de negócio identificável;
+- unidade de negócio;
 - ID confiável;
 - sinal funcional de sucesso;
-- proteção contra retry/redelivery/duplicidade.
+- sinal de entrada;
+- possibilidade de evitar retry/redelivery/duplicidade.
 
-Caso contrário, documente exatamente o gap necessário.
+Caso o Datadog atual só permita:
 
----
+- request count;
+- span count;
+- HTTP errors;
 
-# 16. Validar retries e duplicidade
-
-Para fluxos assíncronos, Pub/Sub, consumers ou chamadas com retry:
-
-- verificar risco de múltiplos spans para a mesma proposta;
-- verificar redelivery;
-- verificar novas tentativas;
-- verificar se request count superestima recorrências;
-- verificar se cardinality por ID resolve o problema.
-
-Se não houver ID disponível como tag/facet, isso deve aparecer explicitamente na documentação como necessidade de instrumentação.
+documente uma visão técnica preliminar com nome correto e explique por que ainda não equivale ao índice funcional definitivo.
 
 ---
 
-# 17. Produzir documentação final atualizada
+# 15. Evidência real obrigatória por widget
 
-Crie ou atualize a pasta:
+Cada widget PRONTO ou MVP PRELIMINAR deve conter duas evidências:
 
-`darwin-monitor/dashboards/`
+## Evidência Datadog
 
-Preserve o histórico útil da documentação anterior, mas corrija hipóteses que tenham sido refutadas pelo Datadog.
+Formato:
 
-Crie/atualize pelo menos:
+`service -> operation -> resource -> tag/atributo -> comportamento observado`
 
-## `darwin-monitor/dashboards/README.md`
+## Evidência código
 
-Índice dos dashboards e estado atual da solução.
+Formato:
 
-## `darwin-monitor/dashboards/01-indice-sucesso-recorrencia.md`
+`arquivo -> classe -> método -> papel no fluxo`
 
-Revalidar completamente com dados reais do Datadog.
-
-## `darwin-monitor/dashboards/02-dashboard-mvp.md`
-
-Documento curto e objetivo contendo somente o que pode ser montado agora para demonstrar progresso.
-
-Deve separar:
-
-- cartão;
-- débito;
-- widgets disponíveis agora;
-- limitações conhecidas.
-
-## `darwin-monitor/dashboards/03-dashboard-alvo.md`
-
-Visão do dashboard ideal para atender a história completa, indicando dependências de instrumentação.
-
-## `darwin-monitor/dashboards/04-gaps-de-instrumentacao.md`
-
-Consolidar somente os gaps que bloqueiam ou reduzem a confiabilidade dos dashboards.
-
-Para cada gap informe:
-
-- indicador afetado;
-- dado ausente;
-- onde o dado existe hoje;
-- por que não é utilizável no Datadog;
-- melhoria necessária;
-- benefício esperado.
-
-Não implemente a melhoria.
+Sem evidência Datadog real, o widget não pode ser classificado como pronto.
 
 ---
 
-# 18. Atualizar documentos antigos relacionados
+# 16. Documentação final
 
-Se arquivos anteriores em:
+Atualize/crie:
+
+`darwin-monitor/dashboards/README.md`
+
+`darwin-monitor/dashboards/01-indice-sucesso-recorrencia.md`
+
+`darwin-monitor/dashboards/02-dashboard-mvp.md`
+
+`darwin-monitor/dashboards/03-dashboard-alvo.md`
+
+`darwin-monitor/dashboards/04-gaps-de-instrumentacao.md`
+
+Além disso, crie:
+
+`darwin-monitor/dashboards/05-evidencias-datadog.md`
+
+Este último arquivo deve registrar, sem dados sensíveis:
+
+- data source consultada;
+- service;
+- operation;
+- resource;
+- atributos/tags observados;
+- consultas/configurações testadas;
+- se retornaram dados;
+- conclusões que confirmaram/refutaram a documentação anterior.
+
+Esse arquivo serve para impedir que futuras análises voltem a tratar hipóteses antigas como fatos.
+
+---
+
+# 17. Corrigir documentos antigos
+
+Se a consulta real ao Datadog refutar ou confirmar informações presentes em:
 
 - `darwin-monitor/indicadores/`
 - `darwin-monitor/fontes/`
 - `darwin-monitor/gaps-e-proximos-passos.md`
 
-contiverem afirmações que a consulta real ao Datadog comprovou ou refutou, atualize essas afirmações.
+atualize apenas os pontos afetados.
 
-Não reescreva tudo desnecessariamente.
+Marque claramente:
 
-Inclua evidência clara de que o ponto foi:
-
-- confirmado no código;
-- confirmado no Datadog;
-- não localizado no Datadog;
-- ainda pendente.
+- CONFIRMADO NO DATADOG
+- NÃO LOCALIZADO NO DATADOG
+- REFUTADO
+- PENDENTE
 
 ---
 
-# 19. Evidências obrigatórias
+# 18. Segurança
 
-Toda recomendação de widget deve possuir evidência.
-
-Sempre que possível documente:
-
-## Evidência no código
-
-`arquivo -> classe -> método -> elemento`
-
-## Evidência no Datadog
-
-`service -> operation -> resource -> tag/atributo -> comportamento observado`
-
-Não inclua trace IDs, proposal IDs ou dados reais desnecessários no relatório.
-
-Se precisar usar exemplos, masque os valores.
-
----
-
-# 20. Segurança
-
-Nunca documente:
+Nunca grave ou mostre:
 
 - cookies;
 - tokens;
-- headers de autenticação;
-- senhas;
+- headers;
 - secrets;
-- valores reais de sessão;
-- dados pessoais;
-- propostas reais;
+- proposal IDs reais;
 - CPFs;
-- payloads sensíveis.
+- payloads sensíveis;
+- valores de sessão.
 
-Se encontrar dado sensível no Datadog, use apenas o nome do atributo e descreva seu papel.
-
----
-
-# 21. Resultado esperado
-
-Ao terminar, quero ter uma documentação que responda claramente:
-
-1. Quais dashboards fazem sentido para a história Darwin?
-2. Quais widgets consigo montar hoje?
-3. Quais são apenas MVP técnico/preliminar?
-4. Quais indicadores já têm telemetria suficiente?
-5. Quais dependem de instrumentação?
-6. O Log Explorer realmente possui ou não os dados necessários?
-7. APM Spans ou APM Metrics são hoje a melhor fonte?
-8. Quais services, operations e resources devo selecionar na interface?
-9. Quais tags/IDs estão realmente disponíveis?
-10. Existe hoje um ID de proposta utilizável para cardinality/count unique?
-11. Como evitar dupla contagem por retry/redelivery?
-12. O que posso apresentar imediatamente como progresso da atividade?
-13. O que precisa ser feito para chegar ao dashboard executivo definitivo?
+Use somente nomes de campos e exemplos mascarados quando necessário.
 
 ---
 
-# 22. Resumo final no terminal
+# 19. Critério de conclusão
 
-Depois de gravar a documentação, responda no terminal apenas com um resumo curto:
+A tarefa só pode ser considerada concluída se:
 
-1. acesso ao Datadog: confirmado ou não;
-2. fontes confirmadas: APM Metrics / APM Spans / Logs;
-3. quantidade de widgets PRONTOS PARA MONTAR;
-4. quantidade de widgets MVP PRELIMINAR;
-5. principais gaps;
-6. se o código de proposta/ID equivalente foi confirmado no Datadog;
-7. primeiro dashboard recomendado para montar;
-8. caminho dos arquivos criados/atualizados.
+- `DATADOG_REAL_ACCESS=CONFIRMADO`;
+- houver evidência de consultas reais ao APM/Spans/Metrics/Logs;
+- pelo menos os fluxos de recorrência de cartão e débito tiverem sido confrontados com o Datadog;
+- as recomendações de widgets distinguirem o que foi testado do que ainda é hipótese;
+- a documentação anterior tiver sido revalidada, e não simplesmente repetida.
 
-Não crie dashboards nem monitors no Datadog nesta etapa.
+Se qualquer um desses itens falhar, não declare a tarefa concluída.
+
+---
+
+# 20. Resumo final no terminal
+
+Ao final, responda somente:
+
+1. `DATADOG_REAL_ACCESS=CONFIRMADO` ou o bloqueio;
+2. services reais confirmados;
+3. sources reais confirmadas: APM Metrics / APM Spans / Logs;
+4. resources reais confirmados;
+5. IDs/tags confirmados;
+6. quantidade de widgets PRONTO PARA MONTAR — TESTADO NO DATADOG;
+7. quantidade de widgets MVP PRELIMINAR — TESTADO NO DATADOG;
+8. principais gaps;
+9. primeiro dashboard recomendado;
+10. arquivos criados/atualizados.
+
+**Não crie dashboards nem monitors nesta etapa.**

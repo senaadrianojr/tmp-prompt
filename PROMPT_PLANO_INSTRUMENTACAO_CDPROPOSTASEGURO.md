@@ -8,6 +8,21 @@ Criar um **plano técnico de instrumentação** para tornar o identificador de n
 
 O foco é identificar **onde o `cdPropostaSeguro` já existe no fluxo da aplicação, onde ele se perde e em quais pontos faz sentido expô-lo como atributo estruturado de observabilidade**.
 
+## Requisito técnico alvo
+
+O plano deve avaliar como objetivo preferencial tornar o `cdPropostaSeguro` **recuperável e pesquisável no Datadog**, priorizando uma solução nativa na origem da telemetria.
+
+A direção técnica a ser validada no código/projeto é:
+
+1. **Span/APM:** expor `cdPropostaSeguro` como tag/attribute estruturado no span relevante e, quando a configuração do Datadog exigir, indicar a necessidade de torná-lo pesquisável/facetado/indexado para uso em filtros, investigação e cardinality/count unique.
+2. **Logs estruturados:** nos pontos estratégicos em que já existe logging útil, enriquecer o evento com `cdPropostaSeguro` como campo estruturado, evitando depender do texto livre da mensagem.
+3. **Micrometer/métricas:** quando o indicador exigir métrica de negócio, avaliar uma métrica Micrometer com **cardinalidade controlada**. O valor bruto de `cdPropostaSeguro` NÃO deve ser usado como tag de métrica de alta cardinalidade. Use dimensões controladas como status, fluxo, meio de pagamento ou resultado.
+4. **Grok:** considerar Grok/regex no Datadog **somente como última alternativa**, caso não seja possível intervir nas aplicações envolvidas ou expor o campo de forma estruturada na origem.
+
+A solução preferencial deve ser a menor intervenção possível que torne o dado observável com segurança.
+
+**Não proponha mudança de código por conveniência.** Só recomende alterações quando forem estritamente necessárias para melhorar a observabilidade nos pontos estratégicos do fluxo. Não altere regra de negócio, contrato, DTO, payload ou arquitetura apenas para facilitar dashboard/monitor.
+
 Esta etapa é somente de análise e planejamento.
 
 ## Regra principal
@@ -178,6 +193,16 @@ Para cada ponto candidato responda:
 
 Priorize **enriquecer pontos já existentes** em vez de criar logs redundantes.
 
+Antes de sugerir qualquer alteração, aplique esta ordem de decisão:
+
+1. o dado já existe estruturado no span/log e só falta utilizá-lo corretamente no Datadog;
+2. o dado já está disponível no ponto de execução e pode enriquecer um span/log existente com alteração mínima;
+3. é necessário adicionar um único ponto estratégico de observabilidade;
+4. somente depois considerar instrumentação adicional;
+5. Grok/regex apenas se não houver possibilidade real de intervenção nas aplicações envolvidas.
+
+Não crie novos logs apenas para repetir informação já presente em um span ou log estruturado equivalente.
+
 ---
 
 # 5. Avaliar log estruturado
@@ -222,6 +247,10 @@ O plano deve priorizar que o Datadog receba algo equivalente a um atributo estru
 
 ou o nome padronizado que já exista na aplicação.
 
+Quando esse campo estiver em logs, indique se ele precisa ser transformado em atributo/facet pesquisável no Datadog para permitir filtros e cardinalidade.
+
+Não proponha Grok aqui como solução principal. Se o campo puder ser emitido estruturado pela aplicação com uma alteração pequena e segura, essa é a opção preferencial.
+
 ---
 
 # 6. Avaliar enriquecimento de spans/APM
@@ -245,6 +274,8 @@ Determine se é viável planejar algo equivalente a:
 `cdPropostaSeguro=<valor>`
 
 no span relevante.
+
+A recomendação preferencial deve ser que o campo fique disponível como **span tag/attribute pesquisável no Datadog**. Quando necessário, explique também o passo operacional futuro de criar facet/indexação correspondente, sem executar essa configuração agora.
 
 Para cada ponto candidato, informe:
 
@@ -281,18 +312,95 @@ Uso esperado:
 - dashboards baseados em spans;
 - cardinality/count unique, se suportado.
 
-## Métricas customizadas
+## Métricas customizadas / Micrometer
 
-Avalie separadamente.
+Avalie separadamente se o projeto já usa Micrometer e se existe um ponto adequado para uma métrica de negócio.
 
-**Não recomende usar `cdPropostaSeguro` como tag de métrica customizada** se isso gerar alta cardinalidade.
+O plano deve considerar, quando fizer sentido para dashboards/monitors, uma métrica Micrometer com **cardinalidade controlada**.
 
-Se houver proposta de métrica futura, prefira dimensões de baixa cardinalidade, como:
+**Não use o valor bruto de `cdPropostaSeguro` como tag de métrica.** Esse identificador tende a gerar alta cardinalidade e deve permanecer em spans/logs para correlação e investigação.
+
+A métrica deve representar o evento/resultado de negócio e usar dimensões controladas, como:
 
 - `status:sucesso|falha`;
 - `meio_pagamento:cartao|debito`;
 - `fluxo:recorrencia`;
 - outras dimensões funcionais estáveis.
+
+---
+
+# 7.1. Hierarquia obrigatória de solução e uso de Grok
+
+O plano deve deixar explícita a ordem de preferência técnica:
+
+## Preferência 1 — Span/APM estruturado
+
+Se o `cdPropostaSeguro` estiver disponível no ponto de execução, priorize adicionar/enriquecer a tag/attribute do span relevante, com alteração mínima e localizada.
+
+Objetivo futuro:
+
+- pesquisar a proposta no APM;
+- filtrar spans;
+- correlacionar operações;
+- usar cardinality/count unique quando suportado;
+- apoiar dashboard e monitor.
+
+## Preferência 2 — Log estruturado em ponto estratégico
+
+Se já houver log útil no mesmo ponto, preferir enriquecer esse log com o campo estruturado `cdPropostaSeguro`.
+
+Não adicionar dezenas de logs novos. A mudança deve ser mínima e restrita aos eventos necessários para identificar:
+
+- entrada;
+- resultado/sucesso;
+- falha;
+- transição assíncrona relevante.
+
+## Preferência 3 — Métrica Micrometer de negócio com cardinalidade controlada
+
+Quando houver necessidade de indicador agregado confiável para dashboard/monitor, avaliar métrica Micrometer específica.
+
+A métrica pode contabilizar eventos como:
+
+- recorrência iniciada;
+- recorrência concluída;
+- recorrência com falha;
+- retry/reprocessamento.
+
+Tags permitidas devem ser de baixa cardinalidade.
+
+Exemplo conceitual:
+
+`status:sucesso|falha`
+
+`meio_pagamento:cartao|debito`
+
+`fluxo:recorrencia`
+
+Nunca usar `cdPropostaSeguro=<id>` como tag da métrica.
+
+## Última alternativa — Grok/regex no Datadog
+
+Grok deve ser recomendado somente se:
+
+- não houver autorização para alterar as aplicações;
+- a aplicação não puder ser publicada/reimplantada no prazo;
+- o dado existir apenas em texto de log e não puder ser estruturado na origem;
+- houver limitação técnica/legada que impeça span/log estruturado.
+
+Nesse cenário, Grok é um **fallback operacional**, não a arquitetura alvo.
+
+O plano deve explicar:
+
+- qual mensagem seria parseada;
+- qual padrão extrairia o valor;
+- qual atributo seria criado;
+- riscos de quebra se o texto do log mudar;
+- necessidade de testes;
+- caráter temporário da solução.
+
+Não criar o parser nesta etapa.
+
 
 ---
 
@@ -378,8 +486,8 @@ Não crie dashboards nesta etapa.
 
 Crie uma tabela consolidada:
 
-| Prioridade | Aplicação | Fluxo | Arquivo/Classe | Método | Momento | cdPropostaSeguro disponível? | Log estruturado | Span attribute | Motivo |
-|------------|-----------|-------|----------------|--------|---------|-----------------------------|-----------------|----------------|--------|
+| Prioridade | Aplicação | Fluxo | Arquivo/Classe | Método | Momento | cdPropostaSeguro disponível? | Solução preferencial | Log estruturado | Span attribute | Micrometer | Grok fallback? | Motivo |
+|------------|-----------|-------|----------------|--------|---------|-----------------------------|---------------------|-----------------|----------------|------------|----------------|--------|
 
 Ordene por prioridade.
 
@@ -416,19 +524,24 @@ Crie um plano futuro, sem executar, por exemplo:
 
 ## Etapa 1 — Instrumentação mínima
 
-- enriquecer pontos obrigatórios;
+- confirmar se o campo já pode ser exposto sem mudança de código;
+- enriquecer somente pontos obrigatórios;
+- priorizar tag/attribute de span pesquisável e/ou log estruturado;
 - permitir busca de uma proposta;
-- permitir correlação básica.
+- permitir correlação básica;
+- evitar mudanças de negócio/DTO/contrato por conveniência.
 
 ## Etapa 2 — Propagação assíncrona
 
 - garantir ID em consumers/producers;
 - revisar MDC/contexto.
 
-## Etapa 3 — APM
+## Etapa 3 — APM e métricas de negócio
 
-- adicionar atributo ao span;
-- validar filtros no Datadog.
+- adicionar/enriquecer atributo no span somente onde necessário;
+- validar filtros/facet/indexação no Datadog;
+- avaliar Micrometer com cardinalidade controlada para indicadores agregados;
+- nunca usar `cdPropostaSeguro` bruto como tag de métrica.
 
 ## Etapa 4 — Validação
 
@@ -485,14 +598,16 @@ Esse documento deve conter:
 5. pontos onde a observabilidade é insuficiente;
 6. matriz de instrumentação;
 7. estratégia de logs estruturados;
-8. estratégia de spans/APM;
-9. contexto assíncrono;
-10. riscos;
-11. padrão de nomenclatura;
-12. plano por etapas;
-13. arquivos/classes que futuramente seriam alterados;
-14. critérios de aceite;
-15. impacto esperado nos dashboards Darwin.
+8. estratégia de spans/APM, incluindo tag/attribute pesquisável `@cdPropostaSeguro` ou equivalente;
+9. estratégia de Micrometer/métrica de negócio com cardinalidade controlada;
+10. decisão explícita sobre Grok como fallback de última alternativa;
+11. contexto assíncrono;
+12. riscos;
+13. padrão de nomenclatura;
+14. plano por etapas;
+15. arquivos/classes que futuramente seriam alterados;
+16. critérios de aceite;
+17. impacto esperado nos dashboards Darwin.
 
 ---
 

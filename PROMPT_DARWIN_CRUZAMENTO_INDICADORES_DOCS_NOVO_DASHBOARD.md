@@ -7,7 +7,7 @@ Atue como **arquiteto de software e especialista em observabilidade e Datadog AP
 **RAIZ_DOCS:** <diretório-da-pasta-docs>
 
 A raiz acima contém, ou deverá permitir localizar:
-- \`darwin-monitor/\`: documentação já produzida sobre indicadores, planilha de referência, discovery de telemetria, fontes e definições existentes de dashboards;
+- `darwin-monitor/`: documentação já produzida sobre indicadores, planilha de referência, discovery de telemetria, fontes e definições existentes de dashboards;
 - outras pastas irmãs: documentação gerada a partir de aplicações, com arquivos Markdown sobre assuntos, domínios, regras de negócio, integrações, endpoints e fluxos.
 
 **Objetivo:** analisar todas essas fontes, cruzar os indicadores da planilha com os indicadores e dashboards já documentados no Darwin Monitor e identificar se as documentações das aplicações revelam **evidências adicionais** que tornem outros indicadores da planilha candidatos à construção de dashboard. Ao final, **criar um novo arquivo Markdown de definição de dashboard**, seguindo o modelo, a linguagem, as seções, o grau de detalhamento e a organização dos dashboards já existentes.
@@ -22,10 +22,10 @@ A nova documentação é uma **especificação**, não uma ordem para criar recu
 
 ### Permitido
 
-- Ler os documentos em \`RAIZ_DOCS\`, incluindo a planilha quando disponível e os arquivos de descoberta técnica já produzidos;
+- Ler os documentos em `RAIZ_DOCS`, incluindo a planilha quando disponível e os arquivos de descoberta técnica já produzidos;
 - Inspecionar código-fonte em modo somente leitura, **apenas se já estiver acessível e se a documentação deixar dúvida essencial**, registrando que houve verificação adicional;
 - Consultar o Datadog real **somente em modo leitura**, caso exista acesso autorizado e funcional e caso a consulta seja necessária para confirmar a viabilidade atual de um widget;
-- Criar **um novo arquivo Markdown** de definição de dashboard dentro de \`darwin-monitor/dashboards/\`, sem destruir o material histórico;
+- Criar **um novo arquivo Markdown** de definição de dashboard dentro de `darwin-monitor/dashboards/`, sem destruir o material histórico;
 - Se já existir um arquivo dedicado a esta mesma análise, revisá-lo incrementalmente, sem duplicá-lo e preservando evidências humanas.
 
 ### Proibido
@@ -47,21 +47,21 @@ A nova documentação é uma **especificação**, não uma ordem para criar recu
 
 Antes de gerar qualquer arquivo:
 
-1. Confirme o caminho real de \`RAIZ_DOCS\` e localize \`darwin-monitor/\`.
+1. Confirme o caminho real de `RAIZ_DOCS` e localize `darwin-monitor/`.
 2. Faça o inventário das pastas irmãs, identificando quais são documentações de aplicações e quais são outros materiais não pertinentes.
-3. Leia os índices \`README.md\`, \`INDICE_RAG.md\`, \`GLOSSARIO.md\` e \`VALIDACOES_PENDENTES.md\` quando existirem, além das páginas de:
-   - \`assuntos/\`
-   - \`dominios/\`
-   - \`integracoes/\`
-   - \`arquitetura/\`
-   - \`api/\`
-   - \`dados/\`
+3. Leia os índices `README.md`, `INDICE_RAG.md`, `GLOSSARIO.md` e `VALIDACOES_PENDENTES.md` quando existirem, além das páginas de:
+   - `assuntos/`
+   - `dominios/`
+   - `integracoes/`
+   - `arquitetura/`
+   - `api/`
+   - `dados/`
    - documentação operacional e de fluxos.
-4. Em \`darwin-monitor/\`, localize e leia os materiais relevantes, conforme encontrados:
+4. Em `darwin-monitor/`, localize e leia os materiais relevantes, conforme encontrados:
    - indicadores, catálogo e critérios de cálculo;
    - planilha de referência dos indicadores;
    - dashboards e respectivas definições existentes;
-   - \`discovery/\` e \`discovery/services/\`;
+   - `discovery/` e `discovery/services/`;
    - fontes e evidências de APM, spans, traces, metrics e logs;
    - lacunas, limitações de instrumentação e próximos passos;
    - estudos anteriores de viabilidade e validações de queries.
@@ -71,7 +71,7 @@ Antes de gerar qualquer arquivo:
 
 ### Localização da planilha
 
-Procure o arquivo de planilha original ou seus derivados rastreáveis (XLSX, XLS, CSV, Markdown ou exportação estruturada), começando por \`darwin-monitor/\` e seus documentos de referência. Caso existam várias versões, identifique a mais confiável/atual por data, autoria documental e consistência com os documentos, sem confundir data de modificação com versão de negócio validada.
+Procure o arquivo de planilha original ou seus derivados rastreáveis (XLSX, XLS, CSV, Markdown ou exportação estruturada), começando por `darwin-monitor/` e seus documentos de referência. Caso existam várias versões, identifique a mais confiável/atual por data, autoria documental e consistência com os documentos, sem confundir data de modificação com versão de negócio validada.
 
 Se a planilha original não estiver disponível:
 - use apenas um catálogo derivado **que preserve fielmente a lista e a definição dos indicadores** e marque a origem como derivada;
@@ -109,7 +109,7 @@ Não duplique widgets ou indicadores que já estejam adequadamente cobertos por 
 
 ## 4. Fase 3 — Cruzamento com as documentações das aplicações
 
-Analise **todas** as aplicações documentadas pertinentes em \`RAIZ_DOCS\`, não somente aquelas que já haviam sido foco do Darwin Monitor.
+Analise **todas** as aplicações documentadas pertinentes em `RAIZ_DOCS`, não somente aquelas que já haviam sido foco do Darwin Monitor.
 
 Para cada indicador oficial ainda não coberto, rastreie nas documentações:
 
@@ -126,7 +126,7 @@ Para cada indicador oficial ainda não coberto, rastreie nas documentações:
 
 Registre a cadeia:
 
-\`indicador da planilha → conceito/regra de negócio → documento da aplicação → componente/fluxo de origem (se documentado) → sinal técnico → evidência de telemetria → possibilidade real de mensuração\`
+`indicador da planilha → conceito/regra de negócio → documento da aplicação → componente/fluxo de origem (se documentado) → sinal técnico → evidência de telemetria → possibilidade real de mensuração`
 
 Se algum elo estiver ausente, **não preencha por inferência silenciosa**. Marque o elo que falta e explique o impacto.
 
@@ -174,7 +174,7 @@ Use referências relativas para arquivos Markdown e referências rastreáveis à
 
 Confiança é uma **estimativa heurística baseada em evidências**, não uma probabilidade estatística. Para interpretações de negócio, **abaixo de 85%** não afirme a regra como estabelecida; registre perguntas e bloqueios. Mesmo acima de 85%, a confiança não substitui a confirmação de disponibilidade da telemetria.
 
-**Regra decisiva:** somente classe **A** pode receber o status \`PRONTO PARA MONTAR — TESTADO NO DATADOG\`. Classe **B** deve ser chamada explicitamente de MVP técnico. Classes **C/D** não entram no conjunto de widgets prontos.
+**Regra decisiva:** somente classe **A** pode receber o status `PRONTO PARA MONTAR — TESTADO NO DATADOG`. Classe **B** deve ser chamada explicitamente de MVP técnico. Classes **C/D** não entram no conjunto de widgets prontos.
 
 O resultado do cruzamento deve deixar claro **o que a nova documentação acrescentou** aos estudos existentes, incluindo mudança de status, evidência nova ou contradição encontrada.
 
@@ -198,13 +198,13 @@ Se **nenhum** indicador tiver evidência suficiente, não force uma definição 
 
 ## 7. Fase 6 — Criar o novo arquivo de definição de dashboard
 
-Localize \`darwin-monitor/dashboards/\` e identifique o **arquivo existente mais adequado como modelo**. Siga sua nomenclatura e estrutura, incluindo numeração sequencial se aplicável.
+Localize `darwin-monitor/dashboards/` e identifique o **arquivo existente mais adequado como modelo**. Siga sua nomenclatura e estrutura, incluindo numeração sequencial se aplicável.
 
 Crie **um novo arquivo** em:
 
-\`RAIZ_DOCS/darwin-monitor/dashboards/<nome-coerente-com-o-padrao-existente>.md\`
+`RAIZ_DOCS/darwin-monitor/dashboards/<nome-coerente-com-o-padrao-existente>.md`
 
-Exemplo meramente ilustrativo: \`<proximo-numero>-dashboard-indicadores-adicionais.md\`.
+Exemplo meramente ilustrativo: `<proximo-numero>-dashboard-indicadores-adicionais.md`.
 
 **Não use uma numeração fixa sem consultar os arquivos atuais.** Se já existir um documento dedicado ao cruzamento proposto, atualize esse arquivo de forma incremental; não crie duplicata.
 
@@ -327,7 +327,7 @@ Em especial:
 - Um evento de mensagem processado não necessariamente corresponde a uma nova recorrência;
 - Uma chamada HTTP de sucesso não necessariamente equivale a pagamento confirmado;
 - Um span de integração não necessariamente representa uma transação de negócio única;
-- Um ID documentado não necessariamente pode ser usado em \`count unique\`;
+- Um ID documentado não necessariamente pode ser usado em `count unique`;
 - Um erro técnico não necessariamente é cancelamento ou rejeição funcional;
 - O fato de existir no banco uma informação não a torna automaticamente consultável no Datadog.
 
@@ -356,7 +356,7 @@ Antes de encerrar:
 
 ## 10. Entrega — execute e reporte
 
-**Grave o arquivo em disco** na pasta \`darwin-monitor/dashboards/\`.
+**Grave o arquivo em disco** na pasta `darwin-monitor/dashboards/`.
 
 Depois, apresente um resumo em português brasileiro com:
 

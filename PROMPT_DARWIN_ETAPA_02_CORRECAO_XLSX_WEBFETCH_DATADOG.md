@@ -4,13 +4,13 @@
 
 > **Escopo desta execução:** corrigir lacunas de verificação da Etapa 02. Não reiniciar a análise do código desnecessariamente e não avançar para as Etapas 03 ou 04.
 >
-> **Saída autorizada:** atualizar **somente** o relatório existente \`./REVALIDACAO_TECNICA_ETAPA_02.md\`, a partir da raiz real \`darwin-monitor/\`. Nada de criar \`docs/darwin-monitor/\` dentro da raiz.
+> **Saída autorizada:** atualizar **somente** o relatório existente `./REVALIDACAO_TECNICA_ETAPA_02.md`, a partir da raiz real `darwin-monitor/`. Nada de criar `docs/darwin-monitor/` dentro da raiz.
 
 ### 1. Contexto — problemas encontrados na execução anterior
 
 A execução anterior encerrou a Etapa 02 com dois impedimentos **não demonstrados adequadamente**:
 
-1. Para arquivos \`.xlsx\`, tentou usar \`grep\` em arquivos binários/ZIP e concluiu que não era possível ler as planilhas. Posteriormente alegou que não poderia usar Python por ausência de bibliotecas externas, sem apresentar testes suficientes do Python, bibliotecas instaladas e alternativa por bibliotecas padrão.
+1. Para arquivos `.xlsx`, tentou usar `grep` em arquivos binários/ZIP e concluiu que não era possível ler as planilhas. Posteriormente alegou que não poderia usar Python por ausência de bibliotecas externas, sem apresentar testes suficientes do Python, bibliotecas instaladas e alternativa por bibliotecas padrão.
 2. Para o Datadog, declarou inexistência de credenciais ou ferramentas autorizadas e não comprovou ter localizado e seguido o procedimento de autenticação **já utilizado anteriormente no projeto**.
 
 Essa conclusão não é suficiente. **Há histórico de acesso real ao Datadog e de leitura de planilhas em atividades anteriores deste ambiente de trabalho.** Isso não garante que o acesso ainda esteja válido, mas obriga a localizar o procedimento, testá-lo adequadamente e registrar o motivo real de qualquer falha.
@@ -26,20 +26,20 @@ Essa conclusão não é suficiente. **Há histórico de acesso real ao Datadog e
 - Não transmita credenciais ou dados internos a serviços de terceiros. Use somente o host oficial/ambiente Datadog corporativo e métodos explicitamente autorizados pelo runbook.
 - Não use ferramentas externas para contornar restrições de segurança, autenticação ou proxy. Se algum recurso não estiver autorizado, registre precisamente a restrição.
 - **Não faça commit ou push.**
-- Não crie relatórios auxiliares, revisões \`rev2\`, novos prompts, scripts persistentes, cópias de arquivos ou diretórios redundantes.
+- Não crie relatórios auxiliares, revisões `rev2`, novos prompts, scripts persistentes, cópias de arquivos ou diretórios redundantes.
 - Se uma execução exigir aprovação que não foi dada, pare apenas aquele teste, peça a autorização adequada e continue as outras verificações permitidas.
 
 ### 3. Preflight: confira o diretório e ferramentas reais
 
 Antes de alegar qualquer limitação:
 
-1. Confirme \`pwd\`/diretório atual e identifique o projeto pelos diretórios \`indicadores/\`, \`dashboards/\`, \`planos/\`, e por \`REVALIDACAO_TECNICA_ETAPA_02.md\`.
-2. Liste **quais ferramentas o agente realmente possui**, distinguindo \`run_shell_command\`, \`read_file\`, \`WebFetch\` (ou equivalente), ferramentas de busca e quaisquer conectores disponíveis.
-3. Execute comandos read-only para detectar o interpretador: \`python --version\`, \`python3 --version\` ou \`py -V\` (conforme o sistema).
+1. Confirme `pwd`/diretório atual e identifique o projeto pelos diretórios `indicadores/`, `dashboards/`, `planos/`, e por `REVALIDACAO_TECNICA_ETAPA_02.md`.
+2. Liste **quais ferramentas o agente realmente possui**, distinguindo `run_shell_command`, `read_file`, `WebFetch` (ou equivalente), ferramentas de busca e quaisquer conectores disponíveis.
+3. Execute comandos read-only para detectar o interpretador: `python --version`, `python3 --version` ou `py -V` (conforme o sistema).
 4. Teste **de verdade** e registre apenas os resultados não sensíveis:
-   - \`python -c "import sys; print(sys.version)"\`
-   - \`python -c "import zipfile, xml.etree.ElementTree as ET; print('zip/xml OK')"\`
-   - \`python -c "import importlib.util; print('openpyxl:', bool(importlib.util.find_spec('openpyxl'))); print('pandas:', bool(importlib.util.find_spec('pandas')))"\`
+   - `python -c "import sys; print(sys.version)"`
+   - `python -c "import zipfile, xml.etree.ElementTree as ET; print('zip/xml OK')"`
+   - `python -c "import importlib.util; print('openpyxl:', bool(importlib.util.find_spec('openpyxl'))); print('pandas:', bool(importlib.util.find_spec('pandas')))"`
 5. Se não existir Python funcional, teste recursos read-only adequados ao formato realmente presentes (por exemplo, PowerShell com suporte .NET ZIP/XML, ou outro interpretador), sem concluir indisponibilidade antes de verificá-los.
 6. Caso algum comando falhe, registre a ferramenta usada, comando **sanitizado**, código/erro, e o que isso significa; não invente retorno de execução.
 
@@ -48,24 +48,24 @@ Antes de alegar qualquer limitação:
 ### 4. Verificação XLSX — sem dependências externas, quando necessário
 
 Priorize a leitura das planilhas de referência presentes na raiz ou subpastas do projeto, especialmente:
-- \`Monitoramento - Planejamento.xlsx\` (se existir com esse nome);
-- \`Monitoramento Cartões 1.xlsx\` (se existir);
+- `Monitoramento - Planejamento.xlsx` (se existir com esse nome);
+- `Monitoramento Cartões 1.xlsx` (se existir);
 - outros arquivos Excel identificados na auditoria.
 
 **Obrigatório:**
 1. Localize os caminhos reais. Não presuma nomes nem que todas as planilhas possuam o mesmo formato.
-2. Se \`openpyxl\` estiver instalado, utilize \`load_workbook(..., read_only=True, data_only=True)\` e, quando necessário, uma segunda leitura com \`data_only=False\` para diferenciar fórmulas de valores em cache.
-3. **Se \`openpyxl\` não estiver instalado, use a biblioteca padrão do Python**: um arquivo \`.xlsx\` é um contêiner ZIP de XML. Use \`zipfile\` e \`xml.etree.ElementTree\` para ler as abas e células.
-4. Demonstre efetivamente \`zipfile.is_zipfile(caminho)\`, liste os membros XML relevantes e leia \`xl/workbook.xml\`, \`xl/_rels/workbook.xml.rels\`, \`xl/worksheets/*.xml\`, \`xl/sharedStrings.xml\` (quando existir) e valores inline. Faça a resolução correta das relações \`r:id\` para nomear abas. Respeite células vazias, referências A1, merges e índices da tabela \`sharedStrings\`.
-5. Não imprima todas as linhas indiscriminadamente; extraia apenas cabeçalhos e células necessárias aos seis indicadores e à coluna \`Responsável\`.
+2. Se `openpyxl` estiver instalado, utilize `load_workbook(..., read_only=True, data_only=True)` e, quando necessário, uma segunda leitura com `data_only=False` para diferenciar fórmulas de valores em cache.
+3. **Se `openpyxl` não estiver instalado, use a biblioteca padrão do Python**: um arquivo `.xlsx` é um contêiner ZIP de XML. Use `zipfile` e `xml.etree.ElementTree` para ler as abas e células.
+4. Demonstre efetivamente `zipfile.is_zipfile(caminho)`, liste os membros XML relevantes e leia `xl/workbook.xml`, `xl/_rels/workbook.xml.rels`, `xl/worksheets/*.xml`, `xl/sharedStrings.xml` (quando existir) e valores inline. Faça a resolução correta das relações `r:id` para nomear abas. Respeite células vazias, referências A1, merges e índices da tabela `sharedStrings`.
+5. Não imprima todas as linhas indiscriminadamente; extraia apenas cabeçalhos e células necessárias aos seis indicadores e à coluna `Responsável`.
 6. Informe **arquivo, aba, linha/célula do indicador, linha/célula do responsável, valor observado e ambiguidade**, se houver.
-7. Se \`Origem\` não constar claramente na planilha, registre esse resultado sem inventar equivalência com \`MOB\` ou Pismo/DXC.
+7. Se `Origem` não constar claramente na planilha, registre esse resultado sem inventar equivalência com `MOB` ou Pismo/DXC.
 8. Se o XLSX for criptografado, corrompido ou não tiver dados exigidos, prove a condição por leitura/erro específico. Não instale dependências sem autorização.
 9. Se já existir outro procedimento de leitura de planilha que tenha funcionado anteriormente, localize-o e avalie sua reutilização antes de declarar impossibilidade.
 
-**É proibido repetir \`grep arquivo.xlsx\` como método de extração estruturada.**
+**É proibido repetir `grep arquivo.xlsx` como método de extração estruturada.**
 
-A ausência de \`openpyxl\`/pandas **não** é evidência suficiente de impossibilidade: tente o caminho ZIP/XML padrão. Se houver falha no parser, registre o motivo técnico e a localização exata da falha.
+A ausência de `openpyxl`/pandas **não** é evidência suficiente de impossibilidade: tente o caminho ZIP/XML padrão. Se houver falha no parser, registre o motivo técnico e a localização exata da falha.
 
 ### 5. Datadog — reutilização obrigatória do acesso já implementado
 
@@ -75,9 +75,9 @@ A ausência de \`openpyxl\`/pandas **não** é evidência suficiente de impossib
 
 Procure no workspace e nas áreas locais autorizadas:
 
-- \`GEMINI_PLATFORM_ACCESS_RUNBOOK.md\`;
+- `GEMINI_PLATFORM_ACCESS_RUNBOOK.md`;
 - README e instruções do projeto de sincronização/autenticação associado ao Gemini;
-- pasta anteriormente referenciada como \`%USERPROFILE%\Tools\cookie-sync\gemini-auth-sync\\\` (verifique o caminho real do ambiente);
+- pasta anteriormente referenciada como `%USERPROFILE%\Tools\cookie-sync\gemini-auth-sync\\` (verifique o caminho real do ambiente);
 - arquivos de **metadados de validade da sessão**, quando previstos no runbook, sem revelar seus conteúdos sensíveis;
 - documentação antiga do Darwin Monitor sobre execução de consultas reais no Datadog;
 - registros/relatórios anteriores de acesso bem-sucedido e quais ferramentas foram efetivamente utilizadas.
@@ -86,10 +86,10 @@ Procure no workspace e nas áreas locais autorizadas:
 
 #### 5.2 WebFetch obrigatório como caminho a VERIFICAR
 
-1. Identifique a ferramenta **\`WebFetch\`**, \`web_fetch\` ou equivalente realmente disponibilizada ao agente; descreva os parâmetros e restrições relevantes.
+1. Identifique a ferramenta **`WebFetch`**, `web_fetch` ou equivalente realmente disponibilizada ao agente; descreva os parâmetros e restrições relevantes.
 2. Verifique se essa ferramenta **suporta a sessão autenticada corporativa** para o domínio oficial do Datadog usado pelo time. Não presuma que um fetch HTTP público herda cookies de navegador ou aceita headers/cookies personalizados.
 3. Se o WebFetch suportar o método aprovado, faça uma **requisição somente leitura** a uma URL/end-point previamente validado no runbook, preferencialmente uma consulta pequena e sem dados pessoais.
-4. Se WebFetch não puder autenticar, registre um teste seguro, ou a restrição de ferramenta observável, e **passe ao procedimento alternativo já documentado**, como \`run_shell_command\` + cliente HTTP local/servidor de sessão, **somente se previsto e permitido**.
+4. Se WebFetch não puder autenticar, registre um teste seguro, ou a restrição de ferramenta observável, e **passe ao procedimento alternativo já documentado**, como `run_shell_command` + cliente HTTP local/servidor de sessão, **somente se previsto e permitido**.
 5. Não encaminhe cookies/chaves em parâmetros de URL, não use proxy público, sites de diagnóstico de terceiros ou WebFetch sem suporte seguro à autenticação para transmitir segredos.
 6. Se WebFetch for ausente/incompatível, **isso não encerra o diagnóstico**: localize e execute a via anteriormente comprovada, respeitando a segurança.
 7. Se o runbook estiver ausente, registre os locais procurados e peça o caminho correto ao usuário; não invente autenticação nem tente burlar controle de acesso.
@@ -100,15 +100,15 @@ Procure no workspace e nas áreas locais autorizadas:
 
 Após autenticar de modo autorizado, faça consultas **somente leitura**, com janela limitada e menor volume possível, para verificar:
 
-- services reais de **Gestão Eventos Conta Cartão**, **Gestão Eventos Pagamento** e **Venda Digital**; descubra os nomes de \`service\` efetivamente utilizados, sem inventá-los;
+- services reais de **Gestão Eventos Conta Cartão**, **Gestão Eventos Pagamento** e **Venda Digital**; descubra os nomes de `service` efetivamente utilizados, sem inventá-los;
 - existência de métricas/APM/spans/logs associados aos seis indicadores;
 - disponibilidade de eventos/status/campos necessários, evitando concluir que um simples log de erro prova a taxa calculável;
 - se há informação em produção, homologação ou ambos, somente quando o ambiente for identificável;
-- queries/filtros e janela temporal (sanitizados), retorno observado e eventuais \`No Data\`.
+- queries/filtros e janela temporal (sanitizados), retorno observado e eventuais `No Data`.
 
 Se a API de consulta utiliza POST para **pesquisa**, isso continua sendo operação logicamente de leitura, mas só a execute se tal endpoint for expressamente permitido pelo procedimento de acesso. **Não use endpoints de criação/edição.**
 
-\`No Data\` **não significa** "evento inexistente": diferencie falta de cobertura, filtros, retenção, indexação, permissão, amostragem e janela temporal.
+`No Data` **não significa** "evento inexistente": diferencie falta de cobertura, filtros, retenção, indexação, permissão, amostragem e janela temporal.
 
 Para cada tentativa registre: ferramenta, tipo de consulta, ambiente/serviço, janela, código HTTP ou status equivalente, resumo do resultado, e evidência de sucesso/falha **sem segredos**.
 
@@ -116,7 +116,7 @@ Se um mecanismo já foi usado com sucesso anteriormente, compare o procedimento 
 
 ### 6. Revisão crítica das conclusões anteriores sobre os seis indicadores
 
-A resposta anterior declarou quatro indicadores \`Comprovável hoje\` mesmo sem consulta real ao Datadog. Essa formulação é ambígua e potencialmente incorreta.
+A resposta anterior declarou quatro indicadores `Comprovável hoje` mesmo sem consulta real ao Datadog. Essa formulação é ambígua e potencialmente incorreta.
 
 Reavalie individualmente, mantendo como hipóteses técnicas a investigar:
 
@@ -130,14 +130,14 @@ Reavalie individualmente, mantendo como hipóteses técnicas a investigar:
 | Origem | Pismo/DXC no código, regra pendente | Não equiparar automaticamente MOB, canal de venda e via de pagamento |
 
 **Classificações independentes e obrigatórias:**
-- \`COMPROVADO NO CÓDIGO\` (caminho, classe, método e linhas, quando disponíveis);
-- \`CONFIRMADO NA PLANILHA\` (arquivo, aba, linha/célula);
-- \`OBSERVADO NO DATADOG\` (consulta real, período e resultado);
-- \`DOCUMENTADO, NÃO CONFIRMADO\`;
-- \`HIPÓTESE / PENDENTE\`;
-- \`BLOQUEADO POR DEFINIÇÃO, ACESSO OU FONTE\`.
+- `COMPROVADO NO CÓDIGO` (caminho, classe, método e linhas, quando disponíveis);
+- `CONFIRMADO NA PLANILHA` (arquivo, aba, linha/célula);
+- `OBSERVADO NO DATADOG` (consulta real, período e resultado);
+- `DOCUMENTADO, NÃO CONFIRMADO`;
+- `HIPÓTESE / PENDENTE`;
+- `BLOQUEADO POR DEFINIÇÃO, ACESSO OU FONTE`.
 
-Para dizer **"indicador calculável hoje"**, não basta encontrar um evento ou log no código: demonstre definição funcional suficiente, numerador/denominador, evento elegível, tratamento de retries e acesso a dados com cobertura adequada. Se apenas o comportamento no código for comprovado, use \`CÓDIGO IDENTIFICADO — DISPONIBILIDADE OPERACIONAL NÃO COMPROVADA\`.
+Para dizer **"indicador calculável hoje"**, não basta encontrar um evento ou log no código: demonstre definição funcional suficiente, numerador/denominador, evento elegível, tratamento de retries e acesso a dados com cobertura adequada. Se apenas o comportamento no código for comprovado, use `CÓDIGO IDENTIFICADO — DISPONIBILIDADE OPERACIONAL NÃO COMPROVADA`.
 
 Não declare complementaridade entre índice de sucesso e taxa de falha sem validar população, status intermediários e fórmula.
 
@@ -145,14 +145,14 @@ Não declare complementaridade entre índice de sucesso e taxa de falha sem vali
 
 Atualize **apenas**:
 
-\`./REVALIDACAO_TECNICA_ETAPA_02.md\`
+`./REVALIDACAO_TECNICA_ETAPA_02.md`
 
 Não crie subdiretórios ou arquivos separados.
 
 Preserve evidências corretas já presentes. Atualize:
 
 1. **Preflight real de ferramentas:** comandos de diagnóstico executados e resultados sanitizados.
-2. **Verificação XLSX:** caminho, abas e células relevantes, ou erro técnico reproduzível; responsabilidade \`SEGUROS\` confirmada ou pendente.
+2. **Verificação XLSX:** caminho, abas e células relevantes, ou erro técnico reproduzível; responsabilidade `SEGUROS` confirmada ou pendente.
 3. **Procedimento Datadog:** runbook localizado, método previsto, tentativas WebFetch e fallback autorizado, resultado real e bloqueio concreto quando houver.
 4. **Matriz dos seis indicadores:** separar comportamento de código, disponibilidade observada, regra funcional e viabilidade de cálculo/monitor.
 5. **Correções das conclusões anteriores:** antes/depois e justificativa.
@@ -165,16 +165,16 @@ Não altere o relatório da Etapa 01: se uma informação anterior precisar de c
 
 A etapa corretiva só pode ser considerada concluída para revisão humana quando:
 - [ ] Ferramentas foram efetivamente verificadas, não apenas descritas.
-- [ ] Houve tentativa de leitura XLSX por meio adequado, incluindo ZIP/XML nativo na ausência de \`openpyxl\`.
-- [ ] \`Responsável\` foi conferido na fonte ou o bloqueio foi demonstrado por erro concreto.
-- [ ] \`GEMINI_PLATFORM_ACCESS_RUNBOOK.md\` e o mecanismo anterior foram procurados/inspecionados, ou a ausência foi documentada com caminhos testados.
+- [ ] Houve tentativa de leitura XLSX por meio adequado, incluindo ZIP/XML nativo na ausência de `openpyxl`.
+- [ ] `Responsável` foi conferido na fonte ou o bloqueio foi demonstrado por erro concreto.
+- [ ] `GEMINI_PLATFORM_ACCESS_RUNBOOK.md` e o mecanismo anterior foram procurados/inspecionados, ou a ausência foi documentada com caminhos testados.
 - [ ] WebFetch foi verificado quanto a existência, compatibilidade e acesso autenticado permitido.
 - [ ] A via alternativa anteriormente usada foi testada quando autorizada e tecnicamente aplicável.
 - [ ] O Datadog foi consultado de fato **ou** existe evidência precisa da impossibilidade atual, sem acesso não autorizado.
 - [ ] As conclusões de "comprovável hoje" foram reavaliadas com linguagem rigorosa.
 - [ ] Somente o relatório existente da Etapa 02 foi atualizado.
 
-Se uma verificação não estiver disponível, **não finja execução ou êxito**. Declare \`ETAPA 02 — CORREÇÃO PARCIAL\`, exponha o impedimento comprovado e solicite a informação/autorização específica. Não avance para a Etapa 03.
+Se uma verificação não estiver disponível, **não finja execução ou êxito**. Declare `ETAPA 02 — CORREÇÃO PARCIAL`, exponha o impedimento comprovado e solicite a informação/autorização específica. Não avance para a Etapa 03.
 
 ### 9. Resposta final obrigatória
 

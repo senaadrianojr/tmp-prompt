@@ -4,7 +4,7 @@
 
 > **Escopo desta execução:** corrigir lacunas de verificação da Etapa 02. Não reiniciar a análise do código desnecessariamente e não avançar para as Etapas 03 ou 04.
 >
-> **Saída autorizada:** atualizar **somente** o relatório existente `./REVALIDACAO_TECNICA_ETAPA_02.md`, a partir da raiz real `darwin-monitor/`. Nada de criar `docs/darwin-monitor/` dentro da raiz.
+> **Saída autorizada:** atualizar o relatório existente `./REVALIDACAO_TECNICA_ETAPA_02.md` e, **somente se alguma ferramenta for efetivamente comprovada por execução**, criar/atualizar `./README_FERRAMENTAS_AMBIENTE.md` na raiz real de `darwin-monitor/`. Nada de criar `docs/darwin-monitor/` dentro da raiz.
 
 ### 1. Contexto — problemas encontrados na execução anterior
 
@@ -26,7 +26,7 @@ Essa conclusão não é suficiente. **Há histórico de acesso real ao Datadog e
 - Não transmita credenciais ou dados internos a serviços de terceiros. Use somente o host oficial/ambiente Datadog corporativo e métodos explicitamente autorizados pelo runbook.
 - Não use ferramentas externas para contornar restrições de segurança, autenticação ou proxy. Se algum recurso não estiver autorizado, registre precisamente a restrição.
 - **Não faça commit ou push.**
-- Não crie relatórios auxiliares, revisões `rev2`, novos prompts, scripts persistentes, cópias de arquivos ou diretórios redundantes.
+- Não crie relatórios auxiliares, revisões `rev2`, novos prompts, scripts persistentes, cópias de arquivos ou diretórios redundantes. **Exceção expressa:** o guia de ferramentas da seção 7.1, apenas com testes comprovados.
 - Se uma execução exigir aprovação que não foi dada, pare apenas aquele teste, peça a autorização adequada e continue as outras verificações permitidas.
 
 ### 3. Preflight: confira o diretório e ferramentas reais
@@ -143,11 +143,13 @@ Não declare complementaridade entre índice de sucesso e taxa de falha sem vali
 
 ### 7. Atualização controlada do relatório da Etapa 02
 
-Atualize **apenas**:
+Atualize o relatório principal:
 
 `./REVALIDACAO_TECNICA_ETAPA_02.md`
 
-Não crie subdiretórios ou arquivos separados.
+**Exceção condicional:** se houver ferramenta efetivamente executada com sucesso, crie/atualize também `./README_FERRAMENTAS_AMBIENTE.md`, conforme seção 7.1.
+
+Não crie subdiretórios nem outros arquivos além da exceção condicional do guia da seção 7.1.
 
 Preserve evidências corretas já presentes. Atualize:
 
@@ -161,6 +163,31 @@ Preserve evidências corretas já presentes. Atualize:
 
 Não altere o relatório da Etapa 01: se uma informação anterior precisar de correção, registre a necessidade no relatório da Etapa 02 para tratamento posterior.
 
+### 7.1 Guia persistente de ferramentas comprovadas — documentação para próximas sessões
+
+**Exceção de escrita aprovada pelo usuário:** caso **ao menos uma** das ferramentas investigadas seja EXECUTADA COM SUCESSO (leitura XLSX com Python, `zipfile`/XML, cliente HTTP, WebFetch autenticado ou acesso Datadog pelo procedimento autorizado), você **deve** criar ou atualizar também o arquivo:
+
+`./README_FERRAMENTAS_AMBIENTE.md` — na **raiz real de `darwin-monitor/`**, ao lado do README principal. Não crie esse arquivo em `tmp-prompt` nem em uma estrutura redundante `docs/darwin-monitor/`.
+
+Objetivo: registrar um **runbook curto, verificável e reutilizável**, para que novos agentes e novas sessões não aleguem indisponibilidade sem repetir os testes que já funcionaram.
+
+O arquivo deve conter obrigatoriamente:
+
+1. **Contexto e validade:** data do teste, plataforma/terminal, diretório de execução, ferramentas/versões observadas, contexto de permissões e observação de que acesso, credenciais, rede e sessões podem expirar ou mudar.
+2. **Matriz por ferramenta:** finalidade, ferramenta/caminho de execução, estado **FUNCIONOU NESTA SESSÃO / FALHOU NESTA SESSÃO / NÃO TESTADO**, último teste, pré-requisitos e evidência objetiva (sem dados sensíveis).
+3. **Como reproduzir:** comandos ou passos **realmente executados e aprovados** para (a) ler XLSX; (b) localizar e seguir o runbook de acesso Datadog; (c) usar WebFetch e/ou alternativa autorizada. Indique claramente o que NÃO foi testado. Não transforme instruções hipotéticas em procedimentos comprovados.
+4. **Pré-verificação de novas sessões:** primeiro ler este guia e o `GEMINI_PLATFORM_ACCESS_RUNBOOK.md`, confirmar ferramentas/permissões do ambiente, verificar vigência da sessão e executar uma consulta segura de leitura antes de assumir sucesso ou alegar bloqueio.
+5. **Resolução de problemas:** erros reais encontrados, medidas não destrutivas que funcionaram e quando solicitar ajuda; referências cruzadas ao relatório da Etapa 02.
+6. **Limites e segurança:** não imprimir, copiar ou persistir cookies, headers, tokens, segredos, dados pessoais, nem instruções para contornar autenticação. Registre apenas a referência ao runbook autorizado, sem replicar conteúdo confidencial.
+
+**Regras adicionais:**
+- Se já houver `README_FERRAMENTAS_AMBIENTE.md`, leia e **atualize em vez de sobrescrever cegamente**; preserve procedimentos previamente validados e suas datas, marcando o que expirou ou mudou.
+- O documento não comprova automaticamente capacidades em futuras sessões. **Revalidar é obrigatório.**
+- Se nenhuma ferramenta funcionar efetivamente, **não crie o guia com sucessos fictícios**; documente os impedimentos no relatório principal.
+- Não acrescente múltiplos `README` alternativos, snapshots ou históricos soltos.
+- Esta é a **única exceção** à regra de saída exclusivamente no relatório; nenhum outro arquivo está autorizado.
+- Na resposta final, informe se o guia foi criado/atualizado, quais ferramentas foram efetivamente comprovadas e o que permaneceu não testado.
+
 ### 8. Critérios de conclusão — não declarar sucesso prematuramente
 
 A etapa corretiva só pode ser considerada concluída para revisão humana quando:
@@ -172,7 +199,7 @@ A etapa corretiva só pode ser considerada concluída para revisão humana quand
 - [ ] A via alternativa anteriormente usada foi testada quando autorizada e tecnicamente aplicável.
 - [ ] O Datadog foi consultado de fato **ou** existe evidência precisa da impossibilidade atual, sem acesso não autorizado.
 - [ ] As conclusões de "comprovável hoje" foram reavaliadas com linguagem rigorosa.
-- [ ] Somente o relatório existente da Etapa 02 foi atualizado.
+- [ ] Somente o relatório existente da Etapa 02 foi atualizado, **além** de `./README_FERRAMENTAS_AMBIENTE.md` caso alguma ferramenta tenha sido comprovada com execução real.
 
 Se uma verificação não estiver disponível, **não finja execução ou êxito**. Declare `ETAPA 02 — CORREÇÃO PARCIAL`, exponha o impedimento comprovado e solicite a informação/autorização específica. Não avance para a Etapa 03.
 
@@ -185,5 +212,6 @@ Apresente:
 4. Se conseguiu consulta real ao Datadog: qual recurso (sem dados pessoais), quando/janela e qual resultado; se não, **qual comando/chamada falhou e por quê**.
 5. Situação revisada de cada um dos seis indicadores, distinguindo código, Datadog e definição funcional.
 6. Caminho do relatório atualizado, limitações que permanecem e arquivos que ficaram intocados.
+7. Caminho e conteúdo resumido do guia persistente de ferramentas, **caso tenha sido criado ou atualizado com evidências reais**.
 
 **Não conclua com "não consigo acessar" baseado apenas em suposições sobre dependências ou segurança. Teste o que for autorizado, registre evidências e, somente então, conclua.**

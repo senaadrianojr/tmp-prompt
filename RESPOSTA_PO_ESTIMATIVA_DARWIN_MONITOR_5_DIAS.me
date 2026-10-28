@@ -1,0 +1,20 @@
+Oi, Aline! Depois do levantamento com o time, conseguimos delimitar uma primeira entrega viável do Darwin Monitor.
+
+Minha **estimativa inicial é de 5 dias úteis** para montar e validar uma primeira versão do dashboard com os quatro indicadores de responsabilidade de Seguros: **Índice de Sucesso, Taxa de Falha, Taxa de Falha no Cancelamento e Taxa de Reprocessamento**.
+
+Nesse prazo, a proposta é aproveitar as informações que já estão disponíveis e entregar as visualizações possíveis. Nos indicadores de cancelamento e reprocessamento, inicialmente poderemos apresentar as ocorrências identificadas; o cálculo das taxas completas ainda depende de confirmar os totais usados como base.
+
+**Podemos começar desde já pelas consultas e visualizações que não dependem do `cdPropostaSeguro`**, enquanto essa instrumentação permanece em homologação (UAT/QA). A liberação para produção e as melhorias que dependem dela seguem como atividade separada.
+
+Quanto aos demais indicadores, a própria planilha já registra limitações que impedem uma medição confiável neste momento:
+
+- **Cobranças duplicadas:** as mensagens duplicadas são descartadas no fluxo, o que limita a apuração do indicador completo.
+- **Cobranças após cancelamento:** dependem de cruzar informações de sistemas diferentes, sendo mais adequado consultar as bases de dados.
+- **Estornos indevidos:** o fluxo já possui uma regra preventiva; é necessário avaliar os casos e os registros disponíveis antes de propor a medição.
+- **Conciliação financeira:** não temos acesso, pela esteira de Seguros, ao valor efetivamente lançado na fatura do cliente.
+- **Processamento de Seguros:** exige relacionar recorrências e remessas, cruzamento que não é feito hoje pelas aplicações analisadas.
+- **Ausência de evento de pagamento:** não é possível diferenciar com segurança a falta do evento de um pagamento que o cliente não realizou; é necessária conferência na base de dados.
+
+Por isso, **não incluiria esses outros indicadores na estimativa de 5 dias úteis**. Eles precisam de definições adicionais, acesso a outras fontes ou mudanças específicas antes de terem prazo confiável. Também precisamos da definição de responsabilidade para os indicadores identificados na planilha como `bvseg`.
+
+Assim, conseguimos entregar valor de forma incremental, sem comprometer a confiabilidade das informações nem assumir um prazo para dependências que ainda não estão resolvidas. A estimativa considera a continuidade do acesso ao Datadog e não inclui novas integrações, alterações nas aplicações ou a implantação em produção.

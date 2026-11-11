@@ -16,9 +16,21 @@ A etapa 05F foi concluída. O relatório privado de prefixo `27-` e o candidato 
 
 **Não repetir auditorias anteriores, não solicitar prints, não revalidar as consultas manualmente, não criar widgets nem ampliar o escopo.**
 
-O revisor identificou uma **única inconsistência semântica material na descrição do widget principal**: a descrição atual candidata dá a entender que a mensagem **foi efetivamente entregue/descartada na DLQ**, embora o log demonstre apenas emissão do sinal terminal, geração/acionamento de evento de erro e encaminhamento pelo caminho NACK/DLQ — **sem confirmação técnica da entrega física à DLQ**.
+O revisor identificou uma **única inconsistência semântica material na descrição do widget principal**: a redação atual afirma que mensagens **foram efetivamente descartadas/entregues na DLQ**, mas o sinal descrito no relatório não é, por si só, um comprovante de recepção final na DLQ. É necessário adequar a **descrição ao marco de responsabilidade efetivamente observável**, sem desvalorizar a conclusão bem-sucedida de uma etapa própria do ecossistema quando essa conclusão estiver comprovada.
 
-Isso contraria o limite de evidência explicitado no relatório privado. É necessário corrigir somente essa formulação, mantendo valor operacional do indicador.
+## 1.1. Regra vinculante — fronteira de responsabilidade e sucesso local
+
+**A observabilidade deste projeto cobre somente as aplicações que integram o ecossistema monitorado pela equipe.** Serviços externos ou aplicações de outros times **não entram automaticamente no escopo**. Se, no futuro, o responsável ampliar essa fronteira, rever os widgets sob autorização específica; não antecipe essa ampliação.
+
+A pergunta de cada widget é: **a aplicação sob nossa responsabilidade executou com sucesso a sua obrigação até o ponto de transferência de responsabilidade tecnicamente verificável?**
+
+- **Sucesso local comprovado:** se a aplicação deve encaminhar/delegar um comando, evento ou mensagem e há evidência de que essa transferência foi aceita/concluída conforme o contrato de integração (por exemplo, ACK de publicação, resposta de aceite ou outro sinal inequívoco), a etapa própria pode ser classificada como **sucesso**, ainda que a execução posterior seja assíncrona e não observada.
+- **Tentativa de delegação, sem confirmação:** log de intenção, acionamento do caminho de erro ou solicitação de envio, isoladamente, **não deve ser chamado de entrega confirmada**; distinguir isso de uma confirmação de transferência. Se houver comprovação em outra etapa do mesmo fluxo, usá-la.
+- **Desfecho externo desconhecido:** não significa **falha** do nosso ecossistema nem exige monitoramento da outra aplicação. Registrar como fora da fronteira observada, e não como incompletude da tarefa **local**.
+- **Falha funcional do fluxo observado:** esgotamento de tentativas de cancelamento continua sendo um **sinal de falha de cancelamento**, mesmo que o tratamento técnico de erro ou a delegação da mensagem tenha sido executado corretamente. Não reclassificar falha de negócio como sucesso apenas porque o encaminhamento de erro funcionou.
+- **Critério de cobertura:** um widget pode cobrir **integralmente o objetivo operacional da equipe na sua fronteira de responsabilidade**, embora não demonstre o resultado final de negócio fora dela. Manter as duas avaliações separadas e não diminuir artificialmente a cobertura operacional por depender de sistemas externos.
+
+**Não inserir ressalvas genéricas e desnecessárias em títulos e descrições.** A descrição deve declarar positivamente o evento ou marco local medido; acrescentar ressalva apenas quando necessária para evitar interpretação errada. Não exigir confirmação do processamento na aplicação de destino se o sucesso contratado da nossa aplicação se encerra na transferência comprovada.
 
 ## 2. Mudança local mínima
 
@@ -26,11 +38,12 @@ Isso contraria o limite de evidência explicitado no relatório privado. É nece
 2. Inspecionar a sua descrição atual e a evidência local que sustenta os termos; não alterar mensagem de log, código ou query validada.
 3. Gerar **nova versão local candidata 05G**, a partir da reconciliada 05F, sem sobrescrever a anterior.
 4. **Alterar exclusivamente o texto da descrição desse único widget**, usando formulação consistente com:
-   - unidade observada: **ocorrências do log/sinal de esgotamento das tentativas do fluxo de cancelamento**;
-   - há indicação de evento de erro e acionamento do caminho NACK destinado à DLQ, quando isso estiver fundamentado no código;
-   - não comprova efetiva entrega à DLQ, deduplicação por proposta, cancelamento definitivo, nem cobrança indevida posterior;
-   - não mistura o fluxo de estorno ou outro fluxo distinto.
-5. Não apresentar "mensagens descartadas", "entrega confirmada à DLQ", "contratos únicos" ou taxa de negócio como fatos comprovados sem telemetria específica.
+   - unidade observada: **ocorrências do sinal de esgotamento das tentativas do fluxo de cancelamento**;
+   - descrever **positivamente o marco operacional no perímetro da equipe** (emissão/sinalização do evento de erro, NACK ou transferência de responsabilidade), com a intensidade que a evidência permitir;
+   - se a transferência ao próximo componente for tecnicamente comprovada, **não negar o sucesso local** só porque o processamento posterior está fora do escopo; se houver apenas intenção de encaminhamento, não chamar de entrega confirmada;
+   - não confundir sucesso do tratamento técnico de erro com sucesso do **cancelamento** em si;
+   - não misturar estorno, outro fluxo, propostas únicas ou resultados financeiros não medidos.
+5. Não apresentar "mensagens descartadas/entregues à DLQ", "contratos únicos" ou taxa de negócio como fatos comprovados sem evidência adequada **para esse marco específico**. Evitar também ressalvas de fim a fim que desqualifiquem indevidamente a execução local bem-sucedida. Se pertinente, deixar os limites de desfecho externo no relatório técnico, sem sobrecarregar o widget.
 6. Preservar exatamente **a query, o título, o ID, agregação, apresentação, metadados, templates, grupos, posições, variáveis e todos os demais widgets** do candidato 05F. Se perceber outra mudança necessária, **não fazer**; registrar separadamente para decisão humana.
 
 ## 3. Conferência de segurança e atualização remota
@@ -52,7 +65,8 @@ Criar arquivo novo em `darwin-monitor/planos/`, prefixo **28-**, sem sobrescreve
 4. diff semântico remoto × candidato e 05F × 05G, verificações e contagens de widgets;
 5. confirmação de preservação de todas as alterações remotas não relacionadas;
 6. confirmação de zero escrita remota, zero modificações do canônico/código/scripts e dois protótipos isolados;
-7. estado **GO / NO-GO para submeter à autorização humana**, sem tratá-lo como autorização.
+7. estado **GO / NO-GO para submeter à autorização humana**, sem tratá-lo como autorização;
+8. registro explícito da **fronteira de responsabilidade da equipe**, distinguindo sucesso/falha do processo local de resultados posteriores em outras aplicações.
 
 ## 5. Encerramento obrigatório
 

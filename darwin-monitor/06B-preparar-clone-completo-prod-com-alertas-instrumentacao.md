@@ -1,124 +1,110 @@
-# PROMPT 06B — Preparar Cópia Completa do Dashboard para Produção com Sinalização de Instrumentação
+# PROMPT 06B — Clonar UAT, Classificar Instrumentação e SUBSTITUIR Dashboard Existente em PROD
 
-> **Executor:** Gemini CLI, no workspace corporativo autorizado.
+> **Executor:** Gemini CLI, exclusivamente no workspace corporativo autorizado.
 >
-> **Segurança do repositório público:** este arquivo descreve apenas métodos. NÃO publicar nele consultas literais, nomes/IDs internos de aplicativos, endpoints, widgets, organizações, branches corporativas específicas, planilhas, relatórios, snapshots JSON, logs, métricas, códigos ou credenciais. Todos os achados concretos e os candidatos ficam SOMENTE no workspace privado.
+> **REPOSITÓRIO PÚBLICO:** este arquivo contém somente método sanitizado. Identificadores de dashboards, URLs corporativas, códigos, queries literais, relatórios, snapshots, nomes de serviços, credenciais e evidências ficam **somente no contexto e workspace privados**. O operador fornecerá **na mesma mensagem de execução do Gemini** o host e ID exatos do dashboard PROD existente a substituir. Nunca inventar esse destino nem inferi-lo de um nome parecido.
 >
-> **Mudança de estratégia deliberada:** um prompt antigo do ciclo 06 previa promoção *seletiva* de widgets e exclusão dos não prontos. Essa estratégia foi substituída por decisão do responsável: **preparar uma cópia COMPLETA do dashboard UAT para PROD**, mantendo a estrutura e os widgets mesmo quando algumas dependências de instrumentação ainda não estão disponíveis, com sinalização visual explícita. Não executar o prompt antigo como se governasse esta etapa.
+> **AUTORIZAÇÃO EXPRESSA DO RESPONSÁVEL (11/11/2026):** o responsável autoriza **sobrescrever COMPLETAMENTE um dashboard MVP existente em PROD**, cujo host e ID serão identificados na mensagem privada, com uma cópia integral do dashboard UAT finalizado, adaptada a PROD, incluindo widgets ainda dependentes de instrumentação marcados de forma visível. **Essa autorização abrange uma única publicação controlada no dashboard-alvo e a verificação posterior**, além de toda a preparação local. Não há necessidade de solicitar uma aprovação intermediária se os gates abaixo estiverem satisfeitos. **NÃO** criar outro dashboard, escrever em outro ID/organização, modificar UAT/canônico, publicar código, executar deploy, mudar scripts, fazer commit/push ou fazer rollback automático.
 >
-> **Permissão desta etapa:** leitura autorizada, inspeção pontual de código, releases e artefatos privados, preparação de JSON(s) **locais** e relatório técnico. **NÃO criar dashboard remotamente em PROD, NÃO executar PUT/POST/PATCH/DELETE em nenhum Datadog, NÃO alterar UAT, canônico, código, testes, scripts, infraestrutura, Git nem pipelines.** Criação/publicação futura de dashboard PROD exigirá nova autorização expressa e específica.
+> **MUDANÇA DE ESTRATÉGIA:** substitui nesta execução o procedimento antigo de preparação seletiva: agora entregar o clone **completo** e realizar a publicação em **um ciclo**, não dividi-lo em prompts menores. Preservar o histórico do prompt antigo sem segui-lo.
 
-## 1. Estado concluído e objetivo
+## 1. Objetivo e fonte de verdade
 
-O projeto de monitoramento em UAT foi finalizado e o responsável confirmou seu **aceite final de UAT em 11/11/2026**. O relatório privado de encerramento mais recente (prefixo `34-`, confirmar caminho real) registrou: canônico UAT sincronizado; dashboard com grupos e widgets preservados; descrições de todos os widgets de dados; sete indicadores delimitados, com classificação independente de cobertura operacional e aderência de negócio.
+UAT foi encerrado e aceito pelo responsável; utilizar o relatório privado de encerramento mais recente e o **JSON canônico UAT sincronizado** como base, após conferir por GET que o remoto UAT não possui divergências materiais. O dashboard deve conter a estrutura integral (notas, grupos e todos os widgets de dados) e os títulos e descrições editoriais já aprovados. Não reabrir auditorias históricas nem refazer consultas UAT.
 
-Não reabrir auditorias UAT, não modificar os sete indicadores nem tentar cumprir requisitos excluídos.
+**Destino:** um dashboard **PROD já existente**, de versão MVP antiga, que o usuário autorizou explicitamente **substituir por completo**. Confirmar os seguintes dados somente no contexto privado:
+- host e ID exatos fornecidos pelo operador (não copiar ID nem host do UAT);
+- organização/tenant de PROD que responde pelo dashboard;
+- título atual e identidade do recurso obtidos por GET; deve corresponder ao dashboard MVP apontado pelo usuário;
+- ambiente real e nomenclatura da tag de PROD (não pressupor `env:prod` se for `env:prd` ou outro valor).
 
-**Objetivo único:** preparar um **novo dashboard candidato de PRODUÇÃO, com cópia integral da estrutura, grupos e widgets atuais de UAT**, adaptado ao ambiente PROD, mantendo as visualizações que dependem de instrumentação não disponível **visivelmente marcadas como aguardando instrumentação**. A publicação não ocorrerá nesta etapa.
+Se o destino privado **não estiver presente, não for acessível por GET ou não corresponder ao dashboard MVP autorizado**, PARAR, sem PUT. Não substituir outro recurso por semelhança de nome. A URL poderá ter slug variável; o ID e o tenant exatos são a referência de destino, mas ambos exigem conferência.
 
-O perímetro continua sendo apenas o das **três aplicações sob gestão da equipe**. Não incluir sistemas externos nem exigir confirmação de desfechos além da transferência de responsabilidade efetivamente comprovada. Distinguir sucesso de etapa local e sucesso integral de negócio sem transformar o desconhecimento de etapa externa em falha do nosso serviço.
+## 2. Escopo funcional
 
-## 2. Fontes privadas e linha de base
+O clone de PROD deve manter os elementos **atuais de UAT**: grupos, notas, widgets e layout, inclusive widgets que ainda não operam por ausência da instrumentação. A cópia deve expor de forma honesta:
+- widgets **operacionais e com dados comprovados em PROD**;
+- widgets **aguardando instrumentação ou deploy em PROD**;
+- widgets cuja **disponibilidade em PROD ainda não foi comprovada**.
 
-1. Localizar o canônico UAT sincronizado, relatório de encerramento e último snapshot privado. Fazer **GET somente leitura** do dashboard UAT atual e comparar ao canônico aprovado. Se divergir inesperadamente, registrar e não usar uma fonte de verdade ambígua.
-2. Fazer leitura autorizada do ambiente PROD para descobrir se já existe dashboard do mesmo projeto/propósito. **Não sobrescrever nem reutilizar ID de dashboard existente**. Se existir recurso PROD similar, obter snapshot e relatar **conflito/decisão de destino**; não criar versão local pronta para sobrescrevê-lo.
-3. Descobrir serviço, ambiente, índices, tags, storage, filtros e variáveis **reais** de PROD; não realizar substituição textual indiscriminada de `uat` por `prod`. O valor efetivo da tag de ambiente precisa ser confirmado.
-4. Verificar formatos de dashboard, metadados read-only, URLs e propriedades específicas de UAT que não devam ser clonadas. Manter estrutura e apresentação equivalentes, mas não copiar identificadores administrativos do recurso UAT como destino de PROD.
-5. Registrar timestamp, origem e hash de snapshots no relatório privado. **Não consultar Log Explorer automaticamente por ferramentas não autorizadas**, nem contornar limitações de credenciais. Quando uma prova exigir Log Explorer, produzir roteiro/consulta privada e delegar ao usuário.
+Preservar as **sete linhas selecionadas** da planilha já consolidada; não construir indicadores das seis linhas excluídas. Não criar novos widgets ou fórmulas e não refatorar aplicações. Todas as descrições já documentadas devem permanecer e os avisos não devem apagar o objetivo funcional do widget.
 
-## 3. Inventário completo por widget e dependências reais
+**Fronteira de responsabilidade:** sucesso de um serviço sob gestão da equipe deve ser medido até o marco comprovado de execução/transferência sob sua responsabilidade. Não exigir evidência da aplicação externa para reconhecer sucesso local comprovado. Não declarar sucesso de cancelamento quando há apenas sucesso no tratamento técnico de falha; não chamar volume de DLQ de taxa de reprocessamento.
 
-Percorrer **todos os widgets de dados recursivamente**, inclusive aninhados nos grupos, e preservar também notas de cabeçalho e propriedades de apresentação.
+## 3. Inventário curto, por widget (não por grupo)
 
-Criar matriz privada por widget:
-`Grupo | Widget/ID | Indicador associado | Tipo/fonte | Dependências de atributos/telemetria | Código na branch principal? | Deploy em PROD comprovado? | Evidência de PROD? | Estado | Aviso proposto | Ajustes PROD necessários`.
+Ler seletivamente somente o código/relatório necessário, o dashboard atual e evidências já disponíveis. Para TODOS os widgets, inclusive aninhados, formar uma matriz privada:
+`grupo | widget | dependência técnica efetiva | presença no código da branch principal | evidência de deploy | evidência de telemetria PROD | status | ajuste de query/env | título/aviso`.
 
-Classificar dependências de:
-- **correlação estruturada por proposta**, principalmente onde a consulta, facet, agrupamento ou cálculo realmente necessite do atributo;
-- **identificação da processadora/origem** na aplicação de venda digital, quando o filtro/agrupamento utiliza o atributo;
-- qualquer outra instrumentação nova efetivamente exigida pelo widget.
+Pontos de atenção:
+- correlação estruturada por proposta nos serviços responsáveis;
+- processadora/origem no serviço de venda digital **somente se a instrumentação não estiver comprovadamente disponível em PROD**;
+- demais campos ou eventos que tornem widgets específicos dependentes de versão ou telemetria.
 
-**Não supor que todo widget depende de correlação apenas por estar no grupo de recorrência.** Examinar cada query, fórmula, facet e template variable. Não remover filtros necessários nem modificar a semântica para disfarçar ausência de atributo. Tampouco supor que um widget *não* depende da instrumentação apenas porque não menciona o campo diretamente; verificar pré-requisitos da fonte.
+**Branch principal ≠ versão efetivamente implantada ≠ log observado.** Não afirmar ausência do campo só porque não apareceu em uma janela sem tráfego. Por outro lado, não anunciar "operacional comprovado" apenas porque o código existe na master.
 
-### Checagem específica de disponibilidade na aplicação de venda digital
+Quando a prova de PROD exigir consultas ao Log Explorer e o Gemini não puder executá-las de modo autorizado/confiável, **não inventar validação nem bloquear automaticamente a cópia**: classificar `PENDENTE DE COMPROVAÇÃO EM PROD` e marcar visualmente. Reportar verificações opcionais para sustentação posterior, sem criar nova etapa obrigatória antes desta publicação.
 
-O responsável determinou que a sinalização de pendência referente à **processadora** seja **condicional**. Investigar pontualmente:
-1. se o código que emite o campo está na branch principal de referência (e não apenas em uma branch de trabalho);
-2. se a versão efetivamente **implantada em PROD** contém esse código;
-3. se há evidência de **logs reais de PROD com o atributo e os eventos necessários** para cada widget dependente.
+## 4. Avisos visuais claros e não enganosos
 
-**Código na branch principal NÃO equivale a deploy e deploy NÃO equivale a telemetria observada.** Se o campo está na branch principal e os eventos relevantes estão realmente comprovados em PROD, **não sinalizar como aguardando instrumentação**. Se está na principal mas a publicação/runtime ainda não é comprovado, classificar como **PENDENTE DE COMPROVAÇÃO EM PROD**, não afirmar ausência da instrumentação. Se está ausente da versão implantada, usar **AGUARDANDO INSTRUMENTAÇÃO/DEPLOY**. A ausência de eventos em uma janela sem tráfego conclusivo não prova falta do atributo.
+Classificação para títulos e descrições:
+1. **OPERACIONAL COMPROVADO EM PROD:** telemetria aplicável e filtros comprovados. **Sem aviso**.
+2. **AGUARDANDO INSTRUMENTAÇÃO/DEPLOY:** evidência material de que atributo/versão exigidos ainda não estão implantados. Prefixar título com `⚠ `; acrescentar à descrição `⚠ Aguardando instrumentação/deploy em PROD: [dependência real].`.
+3. **PENDENTE DE COMPROVAÇÃO:** não há prova suficiente de deploy e/ou telemetria correspondente. Prefixar título com `⚠ `; acrescentar à descrição `⚠ Disponibilidade em PROD não comprovada: [prova específica que falta].`.
 
-Aplicar raciocínio equivalente às aplicações de eventos de pagamento e de conta/cartão para a correlação por proposta.
+Não marcar como aguardando instrumentação com base apenas na ausência de eventos ou em uma branch desatualizada. Não colocar um aviso em todos os widgets de um grupo indiscriminadamente; avaliar por widget. Se `⚠` não puder ser exibido por limitações reais da UI, empregar fallback textual conciso. **Não inserir elementos de UI ou badges que não existam no schema do dashboard.**
 
-## 4. Status, títulos e descrições de PROD
+Mesmo com aviso, manter query e visualização originais adequadamente adaptadas. **Não neutralizar ou remover filtros de correlação necessários para fingir que o gráfico funciona**. "Sem dados" num widget pendente não deve ser interpretado como zero falhas ou zero atividade. Onde não houver instrumentação, o aviso deve ser inequívoco.
 
-Para cada widget, emitir **um** status fundamentado:
-- **OPERACIONAL COMPROVADO EM PROD:** dependência presente e sinal compatível comprovado; título e descrição sem aviso.
-- **AGUARDANDO INSTRUMENTAÇÃO/DEPLOY EM PROD:** dependência ausente na versão implantada ou liberação explicitamente pendente; incluir aviso visível.
-- **PENDENTE DE COMPROVAÇÃO EM PROD:** código/telemetria/versão não permitem atestar disponibilidade; incluir aviso distinto, sem declarar instrumentação ausente.
-- **NÃO APLICÁVEL / DEPENDÊNCIA EXTERNA CONHECIDA:** se um widget já representa apenas sinal operacional parcial, preservar a descrição honesta e o contexto, sem acrescentar falsos bloqueios de instrumentação.
+## 5. Preparação do candidato completo e adaptação de PROD
 
-**Padrão visual sugerido:**
-- Widget pronto: `<título executivo já aprovado>`;
-- Widget esperando implantação: `⚠ <título executivo já aprovado>`, descrição termina com `⚠ Aguardando instrumentação/deploy em PROD: <dependência específica verificada>.`;
-- Widget inconclusivo: `⚠ <título executivo já aprovado>`, descrição termina com `⚠ Disponibilidade em PROD ainda não comprovada: <evidência que falta>.`.
+1. Fazer GET UAT atual e conferir equivalência funcional com o canônico aprovado; salvar snapshot, hash e metadados.
+2. Fazer GET do dashboard PROD **exato** a substituir. Salvar antes de qualquer escrita **backup integral, imutável, datado, com SHA256**, contendo sua configuração atual. Verificar que o backup pode ser relido e que o destino corresponde exatamente ao autorizado.
+3. **Inspecionar e listar o impacto da substituição integral:** tudo que existir exclusivamente no dashboard MVP de PROD (grupos, tabs, links, filtros, configurações ou widgets antigos) poderá ser perdido. Essa substituição foi autorizada, portanto não é necessário preservar o layout antigo, mas registrar o diff e impedir que a operação alcance outros dashboards.
+4. Produzir o novo JSON PROD a partir do UAT, com título que identifique PROD e com a estrutura integral, substituindo **somente os valores relacionados ao ambiente e à semântica aprovada de avisos**. Preservar número e ordem dos grupos e widgets de origem. Remover ID e metadados read-only próprios do dashboard UAT do payload e usar **somente o ID PROD alvo validado na URL do PUT** e nos locais exigidos pelo schema; nunca criar novo recurso.
+5. Resolver serviço, ambiente, índices e variáveis com configuração **real do tenant PROD**. Não fazer substituição global cegamente; verificar `env` dentro de queries, URLs e template variables e evitar links para UAT. A falta de prova de telemetria não impede publicação de um widget marcado; **uma query inválida, variável ausente ou filtro de ambiente inventado é bloqueio técnico** para publicar o payload inteiro.
+6. Conferir duplicidade de IDs, campos proibidos/read-only, schema do Datadog e ausência de conteúdos de UAT que afetem filtros. Aplicar avisos sem alterar cálculos.
+7. Preparar candidato completo e diff estruturado **UAT × candidato PROD** e **PROD MVP atual × payload de substituição**. O primeiro explica adaptações do ambiente e avisos; o segundo demonstra o que será sobrescrito (substituição **integral autorizada**, não diff cirúrgico).
 
-**Não alterar títulos de grupos indiscriminadamente**, não transformar aviso em uma afirmação de erro e não trocar "sem dados" por "zero" ou "sucesso". Os avisos **não** são métricas nem fórmulas. Se o tipo de widget não renderizar uma descrição na UI, manter a sinalização no **título**; se o ícone ⚠ tiver problema real de renderização, documentar fallback em texto curto, sem inventar suporte. Evitar prefixar widgets comprovadamente operacionais. Preferir sinalização objetiva a um rótulo genérico "em construção".
+## 6. Gates de segurança obrigatórios, dentro da mesma execução (sem nova aprovação)
 
-Descrição de cada widget continua explicando o que mede e qual objetivo operacional cobre. O aviso de instrumentação é um complemento e não deve apagar essa informação. **Não reclassificar cobertura de negócio** pelo fato de a cópia estar preparada.
+- Identidade do dashboard de destino **exatamente igual** à informada pelo usuário, tenant PROD correto, título atual compatível, e GET válido;
+- Snapshot PROD pré-PUT completo salvo, checksum validado, e possibilidade de restauração manual documentada;
+- JSON candidato inteiramente válido, com grupos/widgets de UAT completos, descrições preservadas, avisos coerentes, queries sintaticamente adequadas a PROD e **nenhuma dependência de ambiente UAT**;
+- Validação local/dry-run somente se comprovadamente **offline, sem escrita** e sem alterar UAT/canônico; não modificar publicadores;
+- Evidência de que uma publicação para o **ID PROD existente** substitui esse recurso, e não cria outro, nem envia ao tenant errado;
+- GET de **concorrência imediatamente antes do PUT**: se o recurso PROD sofreu modificação desde o snapshot usado para montar o payload, **abortar sem PUT**, preservar evidências e reportar, em vez de sobrescrever trabalho paralelo;
+- Se suportado de verdade, usar controle de concorrência da API; não inventar suporte `If-Match`.
 
-## 5. Como construir o candidato completo para PROD
+**Não adicionar um gate novo exigindo prova de logs de todos os widgets.** Pendências de instrumentação conhecidas ou inconclusivas devem ser representadas pelos avisos, conforme autorizado. **Só bloquear por segurança real do recurso, risco de sobrescrita não intencional, invalidez do payload, inconsistência do destino, falta de backup ou divergência de concorrência.**
 
-1. Partir do snapshot/canônico UAT consistente e preservar **todos** os grupos, widgets, notas, tipos, layout, posições, configurações de exibição e descrições.
-2. Preparar novo título de dashboard que identifique claramente **PROD**, distinta da instância UAT; não copiar ID ou URL do dashboard de origem como destino.
-3. Adaptar serviço/ambiente/index/storage/template variables para **PROD** somente com os valores comprovados nas configurações reais. Para consultas sem certeza sobre equivalente PROD, manter candidato local em estado **NÃO PUBLICÁVEL — FILTRO A CONFIRMAR**; não inventar. Jamais permitir `env:uat` ou links de UAT inadvertidamente.
-4. Aplicar avisos **somente** aos widgets classificados como pendentes. O candidato deve permanecer estruturalmente completo; não excluir widgets pendentes nem inventar valores/consultas temporárias, não reconfigurar grupos para ocultá-los.
-5. Se PROD já possui dashboard de mesmo projeto, documentar sua existência e definir candidato de **nova cópia independente** (ou conflito a decidir); não construir payload que sobrescreva dashboard existente.
-6. Separar do JSON candidato o relatório de status/pendências; não inserir metadados não suportados no schema do Datadog.
-7. Produzir um único **JSON candidato completo, local e não publicado**, além de um snapshot de base e relatório. Se houver valores de PROD não confirmados que impeçam montagem válida, produzir inventário e candidato explicitamente bloqueado, com os pontos exatos que precisam ser resolvidos.
+## 7. Publicação em PROD — uma única escrita autorizada
 
-## 6. Validação manual necessária e economia de consultas
+Quando os gates forem aprovados:
+1. Exibir no terminal privado resumo das quantidades reais de widgets/grupos e estados, dashboard-alvo confirmado, backup, hash, diff de substituição, resultado do dry-run e aviso de que o conteúdo anterior será substituído por completo.
+2. Executar **um único PUT autorizado** contra o **dashboard PROD preexistente e identificado**, usando o mecanismo corporativo de API já autorizado que suporte atualização por ID. **Não executar POST para criar outro dashboard**. Não alterar script para contornar validações; se o script existente não suportar atualização segura por ID, usar somente API oficial/caminho corporativo já autorizado e comprovado, ou abortar se isso não for possível.
+3. Em timeout, 5xx, resposta ambígua ou falha, **não fazer PUT novamente automaticamente**. GET diagnóstico e status preciso `PUBLICADO`, `NÃO PUBLICADO`, `DIVERGENTE` ou `INDETERMINADO`; preservar backups. Sem rollback automático.
+4. Se HTTP indicar êxito, realizar **GET imediatamente após o PUT** e comparar com o payload esperado e a origem UAT:
+   - mesmos grupos e widgets de dados que UAT, com títulos e descrições adequados a PROD e avisos;
+   - queries e variáveis sem referência indevida a UAT;
+   - nenhuma alteração externa a esse dashboard;
+   - diferenças da API limitadas a normalizações conhecidas.
+5. Considerar **concluída tecnicamente** apenas se o GET pós-PUT conferir; marcar **VALIDAÇÃO VISUAL DO OPERADOR PENDENTE** (acessar dashboard em PROD e verificar título, grupos, estado dos avisos e alguns widgets com dados).
+6. **Não sincronizar nem alterar canônico UAT**. O JSON candidato PROD e o snapshot pós-PUT podem servir de artefatos privados da versão de produção; não usar canônico UAT como alvo.
 
-O Gemini não executa Log Explorer de modo confiável. **Não pedir novamente verificações já realizadas em UAT.**
+## 8. Entrega privada e parada
 
-Gerar **no máximo cinco consultas/validações prioritárias de PROD** para o usuário, agrupando verificações por atributo/serviço de forma a cobrir o maior número de widgets. Para cada uma, registrar exclusivamente no relatório privado query literal, env e serviço reais, janela indicada, campos esperados e o efeito da evidência na classificação dos widgets.
+Criar relatório novo em `darwin-monitor/planos/`, prefixo **35-** (confirmar que o nome está livre), com:
+- registro de autorização do operador para **substituição integral** do dashboard MVP PROD alvo, e identidade confirmada por GET;
+- snapshots/hashes UAT, PROD pré-PUT e PROD pós-PUT; backup legível;
+- matriz de classificação de todos os widgets e seus avisos, com provas e pendências;
+- diff UAT/candidato e PROD antigo/novo; impactos de substituir o MVP;
+- validação JSON/schema/dry-run e controles de concorrência;
+- horário, HTTP/status da única escrita (se executada);
+- diff pós-publicação e confirmação de preservação de UAT/canônico/código;
+- necessidade de validação visual do usuário e lista objetiva de instrumentações a acompanhar;
+- paths exatos dos artefatos privados, sem qualquer push ao repositório público.
 
-Distinguir:
-- prova de presença de atributo numa ocorrência;
-- prova de cobertura de todos os eventos de que uma visualização depende;
-- ausência de tráfego e ausência real de instrumentação.
+**Resultado final em uma linha:** `DASHBOARD PROD SUBSTITUÍDO E CONFERIDO POR GET / VALIDAÇÃO VISUAL PENDENTE`, ou `NÃO PUBLICADO (NO-GO)`, ou `RESULTADO INDETERMINADO — SEM NOVO PUT`, de acordo com o que realmente ocorreu.
 
-Se já houver evidências privadas confiáveis de PROD, **reutilizá-las** em vez de exigir execução duplicada. A falta de prova deve gerar **status de pendência**, não alegação de ausência.
-
-## 7. Testes locais e critérios de aceite
-
-Rodar somente validações comprovadamente offline/read-only:
-- JSON e schema válidos; dashboard novo sem copiar identificador administrativo de UAT;
-- grupos/widgets de dados com a **mesma contagem** que a origem UAT, salvo diferença técnica obrigatória e documentada; mesmo layout e ordem;
-- títulos/descrições preservados, exceto avisos justificados;
-- queries e fontes adaptadas sem perda de semântica, com `env` e indices efetivos de PROD;
-- nenhuma dependência silenciosa de ambiente UAT;
-- diff semântico UAT × candidato PROD com justificativa **campo a campo** para transformações de ambiente, identidade da cópia e avisos;
-- matriz de elegibilidade/status coerente com os avisos realmente incluídos;
-- preservação do canônico UAT, do dashboard remoto UAT e de qualquer dashboard PROD preexistente;
-- **zero PUT/POST/PATCH/DELETE remoto, zero alterações em código/Git/scripts**.
-
-Se alguma validação não puder ser feita, registrar **NO-GO para publicação** e a pré-condição específica. Não executar scripts de publicação nesta etapa.
-
-## 8. Artefatos privados e parada
-
-Criar em `darwin-monitor/planos/` relatório novo de prefixo **35-**, com nome semelhante a `35-preparacao-clone-completo-prod-e-pendencias-instrumentacao.md`. Confirmar antes o prefixo disponível e não sobrescrever relatórios existentes.
-
-Entregar:
-1. **JSON candidato PROD integral local** e checksum;
-2. **snapshot UAT base** e, se houver, snapshot de dashboard PROD preexistente;
-3. **matriz de todos os widgets**, dependências, prova de branch principal, release e telemetria PROD;
-4. enumeração de widgets **operacionais**, **aguardando implantação** e **pendentes de comprovação**, com títulos/descrições propostos;
-5. pacote de até cinco verificações humanas em PROD, apenas se necessário;
-6. diff semântico e resultados de teste seguro;
-7. **relatório 35**, com paths reais, conclusões, riscos, bloqueios e recomendação: **PRONTO PARA REVISÃO / PREPARAÇÃO BLOQUEADA**.
-
-No resumo final mostrar as contagens reais de widgets em cada estado, status da instrumentação por aplicação, se a cópia completa está estruturalmente pronta e quais condições faltam para o próximo gate.
-
-**PARE. NÃO PUBLICAR EM PRODUÇÃO NESTA ETAPA.** Após revisão do resultado, o responsável poderá autorizar especificamente a **criação de uma nova cópia em PROD** e exigir GET pós-publicação, conferência de títulos/avisos e verificação visual, além de decidir sobre remoção futura dos avisos quando houver implantação e telemetria comprovadas.
+**PARE** após essa execução. Não fazer rollback automático, novas escritas, deploy de instrumentação, publicação em outro dashboard, alteração no canônico UAT nem lançamento de uma segunda fase de widgets.

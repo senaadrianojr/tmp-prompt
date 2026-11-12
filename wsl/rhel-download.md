@@ -1,34 +1,30 @@
-# RHEL 9.4 para WSL 2 — referência de download
+# RHEL 9.4 no WSL 2 — requisito BV
 
-**Versão exigida pelo tutorial corporativo: Red Hat Enterprise Linux 9.4 (x86_64).** Não substituir por 9.6, 9.8, 9.9 ou 10 sem orientação da equipe responsável.
+**Versão obrigatória conforme tutorial corporativo:** Red Hat Enterprise Linux **9.4** (x86_64), sob WSL 2.
 
-## Links oficiais
-- Downloads da Red Hat (inclui a seção **Red Hat Enterprise Linux 9.4**): https://developers.redhat.com/products/rhel/download
-- Instruções oficiais de RHEL no WSL: https://developers.redhat.com/articles/2025/05/20/getting-started-rhel-windows-subsystem-linux
-- Importação de distribuições personalizadas no WSL (Microsoft): https://learn.microsoft.com/en-us/windows/wsl/use-custom-distro
+## Status do arquivo de instalação
 
-## Atenção ao tipo de imagem
+**Não foi encontrado link direto validado para um arquivo oficial de RHEL 9.4 pronto para WSL 2.** A página abaixo inclui as ISOs Boot e DVD de RHEL 9.4, mas **nenhuma delas é um arquivo de importação WSL**:
 
-Na seção de **RHEL 9.4** da página de downloads aparecem **Boot ISO** e **DVD ISO** (x86_64/aarch64). Esses arquivos ISO são instaladores tradicionais, **não** imagens rootfs prontas para importar com `wsl --import`.
+- https://developers.redhat.com/products/rhel/download
 
-Para o WSL 2, é necessário um pacote compatível (por exemplo, `.tar`, `.tar.gz` ou `.wsl` adequado ao WSL) da **mesma versão 9.4**. Não foi confirmada, na página de downloads, uma imagem WSL2 pré-compilada especificamente para 9.4.
+A Red Hat anunciou imagens pré-compiladas oficiais de RHEL para WSL em maio de 2025. A documentação de suporte aponta uma imagem da versão 9.5; isso **não é uma imagem 9.4** e não satisfaz o requisito corporativo.
 
-**Caminho recomendado no ambiente corporativo:** consultar o tutorial e a equipe de infraestrutura para obter a origem autorizada do pacote RHEL 9.4 usado na instalação original.
+- Anúncio da Red Hat: https://developers.redhat.com/articles/2025/05/20/windows-subsystem-linux
+- Informações de suporte e imagens: https://access.redhat.com/articles/7115538
+- Como importar um rootfs compatível no WSL: https://learn.microsoft.com/pt-br/windows/wsl/use-custom-distro
 
-## Verificar versão no CMD
+## Como conseguir a versão exata
+
+1. Recuperar o **arquivo de imagem ou URL exata** citado no tutorial da BV, ou solicitar a imagem de RHEL 9.4 à infraestrutura.
+2. Verificar no notebook onde o RHEL 9.4 já está instalado se o pacote original ainda está em Downloads ou em uma pasta de instalação:
 
 ```cmd
+dir /s /b "%USERPROFILE%\Downloads\*rhel*" 2>nul
 wsl -l -v
 wsl -d RHEL9.4 -- cat /etc/redhat-release
 ```
 
-Se existir uma imagem WSL 2 limpa e aprovada, o padrão de importação no **CMD** é:
+3. Não compartilhar uma exportação completa do WSL corporativo em repositórios públicos ou com terceiros sem autorização, porque pode conter certificados, tokens, arquivos internos e configurações particulares.
 
-```cmd
-mkdir C:\WSL\RHEL9.4
-wsl --import RHEL9.4 C:\WSL\RHEL9.4 C:\caminho\imagem-rhel-9.4.tar --version 2
-```
-
-Substitua o caminho de exemplo pelo pacote efetivamente fornecido. A importação exige que o WSL 2 esteja habilitado e que o arquivo seja realmente compatível.
-
-**Segurança:** não distribuir exportações da distribuição corporativa já configurada sem autorização, pois podem conter arquivos, certificados, tokens e outros dados internos.
+**Importante:** não tratar links de ISO, página de catálogo ou outra versão do RHEL como se fossem o endereço direto de um rootfs RHEL 9.4 para WSL.

@@ -8,6 +8,8 @@
 >
 > **MUDANÇA DE ESTRATÉGIA:** substitui nesta execução o procedimento antigo de preparação seletiva: agora entregar o clone **completo** e realizar a publicação em **um ciclo**, não dividi-lo em prompts menores. Preservar o histórico do prompt antigo sem segui-lo.
 
+> **ATUALIZAÇÃO DO RESPONSÁVEL EM 24/11/2026:** foram comunicadas **novas confirmações de implantação em PROD** das instrumentações-chave que anteriormente podiam estar pendentes. Os nomes específicos, serviços e escopo exato dessas confirmações serão repassados **somente na mensagem privada de execução**. Tratar essas confirmações como **deploy validado pelo responsável** e **não** como prova automática de emissão de cada evento/facet no Log Explorer. Elas têm precedência sobre hipóteses antigas de "aguardando deploy". Não repetir a investigação de branch/release já confirmada sem contradição material; fazer apenas verificações pontuais de campos, filtros e telemetria efetiva quando possível.
+
 ## 1. Objetivo e fonte de verdade
 
 UAT foi encerrado e aceito pelo responsável; utilizar o relatório privado de encerramento mais recente e o **JSON canônico UAT sincronizado** como base, após conferir por GET que o remoto UAT não possui divergências materiais. O dashboard deve conter a estrutura integral (notas, grupos e todos os widgets de dados) e os títulos e descrições editoriais já aprovados. Não reabrir auditorias históricas nem refazer consultas UAT.
@@ -41,7 +43,7 @@ Pontos de atenção:
 - processadora/origem no serviço de venda digital **somente se a instrumentação não estiver comprovadamente disponível em PROD**;
 - demais campos ou eventos que tornem widgets específicos dependentes de versão ou telemetria.
 
-**Branch principal ≠ versão efetivamente implantada ≠ log observado.** Não afirmar ausência do campo só porque não apareceu em uma janela sem tráfego. Por outro lado, não anunciar "operacional comprovado" apenas porque o código existe na master.
+**Branch principal ≠ versão efetivamente implantada ≠ log observado.** A confirmação expressa de deploy pelo responsável é evidência válida da **implantação**, ainda que não seja comprovação de eventos em tempo real. Se houver essa confirmação, não exigir nova inspeção extensa de branch/release nem marcar `AGUARDANDO INSTRUMENTAÇÃO/DEPLOY` por falta de log. Confirmar pontualmente as queries/campos efetivos de PROD quando a fonte permitir; na falta de evidência suficiente para a consulta específica, classificar `PENDENTE DE COMPROVAÇÃO` sem inventar logs ou ausência de implantação. Uma janela vazia sem tráfego não comprova defeito nem falta do atributo.
 
 Quando a prova de PROD exigir consultas ao Log Explorer e o Gemini não puder executá-las de modo autorizado/confiável, **não inventar validação nem bloquear automaticamente a cópia**: classificar `PENDENTE DE COMPROVAÇÃO EM PROD` e marcar visualmente. Reportar verificações opcionais para sustentação posterior, sem criar nova etapa obrigatória antes desta publicação.
 
@@ -52,7 +54,7 @@ Classificação para títulos e descrições:
 2. **AGUARDANDO INSTRUMENTAÇÃO/DEPLOY:** evidência material de que atributo/versão exigidos ainda não estão implantados. Prefixar título com `⚠ `; acrescentar à descrição `⚠ Aguardando instrumentação/deploy em PROD: [dependência real].`.
 3. **PENDENTE DE COMPROVAÇÃO:** não há prova suficiente de deploy e/ou telemetria correspondente. Prefixar título com `⚠ `; acrescentar à descrição `⚠ Disponibilidade em PROD não comprovada: [prova específica que falta].`.
 
-Não marcar como aguardando instrumentação com base apenas na ausência de eventos ou em uma branch desatualizada. Não colocar um aviso em todos os widgets de um grupo indiscriminadamente; avaliar por widget. Se `⚠` não puder ser exibido por limitações reais da UI, empregar fallback textual conciso. **Não inserir elementos de UI ou badges que não existam no schema do dashboard.**
+Não marcar como aguardando instrumentação se o **responsável já confirmou o deploy em PROD** daquela dependência; nesse caso, a eventual lacuna de comprovação é de **telemetria/filtro**, não de implantação. Não marcar como aguardando instrumentação com base apenas na ausência de eventos ou em uma branch desatualizada. Não colocar um aviso em todos os widgets de um grupo indiscriminadamente; avaliar por widget. Se `⚠` não puder ser exibido por limitações reais da UI, empregar fallback textual conciso. **Não inserir elementos de UI ou badges que não existam no schema do dashboard.**
 
 Mesmo com aviso, manter query e visualização originais adequadamente adaptadas. **Não neutralizar ou remover filtros de correlação necessários para fingir que o gráfico funciona**. "Sem dados" num widget pendente não deve ser interpretado como zero falhas ou zero atividade. Onde não houver instrumentação, o aviso deve ser inequívoco.
 
@@ -76,7 +78,7 @@ Mesmo com aviso, manter query e visualização originais adequadamente adaptadas
 - GET de **concorrência imediatamente antes do PUT**: se o recurso PROD sofreu modificação desde o snapshot usado para montar o payload, **abortar sem PUT**, preservar evidências e reportar, em vez de sobrescrever trabalho paralelo;
 - Se suportado de verdade, usar controle de concorrência da API; não inventar suporte `If-Match`.
 
-**Não adicionar um gate novo exigindo prova de logs de todos os widgets.** Pendências de instrumentação conhecidas ou inconclusivas devem ser representadas pelos avisos, conforme autorizado. **Só bloquear por segurança real do recurso, risco de sobrescrita não intencional, invalidez do payload, inconsistência do destino, falta de backup ou divergência de concorrência.**
+**Não adicionar um gate novo exigindo prova de logs de todos os widgets.** As implantações confirmadas pelo responsável não são mais bloqueios de deploy. Pendências de **telemetria em PROD** ainda inconclusivas devem ser representadas pelos avisos adequados, conforme autorizado. **Só bloquear por segurança real do recurso, risco de sobrescrita não intencional, invalidez do payload, inconsistência do destino, falta de backup ou divergência de concorrência.**
 
 ## 7. Publicação em PROD — uma única escrita autorizada
 
